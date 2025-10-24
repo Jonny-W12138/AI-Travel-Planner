@@ -310,94 +310,139 @@ sudo certbot --nginx -d your-domain.com -d www.your-domain.com
 sudo systemctl status certbot.timer
 ```
 
-## Docker 部署（可选）
+## Docker 部署（推荐）
 
-### 1. 创建 Dockerfile
+### 方式 1: 使用 Docker Hub / GitHub Container Registry
 
-```dockerfile
-FROM python:3.9-slim
+项目已经通过 GitHub Actions 自动构建并发布 Docker 镜像到 GitHub Container Registry。
 
-WORKDIR /app
-
-# 安装系统依赖
-RUN apt-get update && apt-get install -y \
-    gcc \
-    && rm -rf /var/lib/apt/lists/*
-
-# 复制依赖文件
-COPY requirements.txt .
-
-# 安装 Python 依赖
-RUN pip install --no-cache-dir -r requirements.txt
-RUN pip install --no-cache-dir gunicorn
-
-# 复制应用代码
-COPY backend ./backend
-COPY frontend ./frontend
-COPY run.py .
-
-# 暴露端口
-EXPOSE 8000
-
-# 启动命令
-CMD ["gunicorn", "-w", "4", "-k", "uvicorn.workers.UvicornWorker", "backend.main:app", "--bind", "0.0.0.0:8000"]
-```
-
-### 2. 创建 docker-compose.yml
-
-```yaml
-version: '3.8'
-
-services:
-  db:
-    image: mysql:8.0
-    restart: always
-    environment:
-      MYSQL_ROOT_PASSWORD: rootpassword
-      MYSQL_DATABASE: travel_planner
-      MYSQL_USER: traveluser
-      MYSQL_PASSWORD: userpassword
-    volumes:
-      - mysql-data:/var/lib/mysql
-    ports:
-      - "3306:3306"
-
-  app:
-    build: .
-    restart: always
-    ports:
-      - "8000:8000"
-    environment:
-      DATABASE_URL: mysql+pymysql://traveluser:userpassword@db:3306/travel_planner
-      SECRET_KEY: ${SECRET_KEY}
-      ALIYUN_BAILIAN_API_KEY: ${ALIYUN_BAILIAN_API_KEY}
-      ALIYUN_BAILIAN_APP_ID: ${ALIYUN_BAILIAN_APP_ID}
-      AMAP_API_KEY: ${AMAP_API_KEY}
-      AMAP_WEB_SERVICE_KEY: ${AMAP_WEB_SERVICE_KEY}
-    depends_on:
-      - db
-
-  nginx:
-    image: nginx:alpine
-    restart: always
-    ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - ./nginx.conf:/etc/nginx/conf.d/default.conf
-      - ./frontend:/usr/share/nginx/html
-    depends_on:
-      - app
-
-volumes:
-  mysql-data:
-```
-
-### 3. 启动容器
+#### 1. 拉取镜像
 
 ```bash
-docker-compose up -d
+# 从 GitHub Container Registry 拉取最新镜像
+docker pull ghcr.io/yourusername/ai-travel-planner:latest
 ```
+
+#### 2. 创建环境变量文件
+
+```bash
+# 复制模板文件
+cp env.template .env
+
+# 编辑 .env 文件，填入你的配置
+nano .env
+```
+
+#### 3. 运行容器
+
+```bash
+docker run -d \
+  --name ai-travel-planner \
+  -p 8000:8000 \
+  --env-file .env \
+  -v $(pwd)/data:/app/data \
+  ghcr.io/yourusername/ai-travel-planner:latest
+```
+
+#### 4. 访问应用
+
+打开浏览器访问: `http://localhost:8000`
+
+### 方式 2: 使用 docker-compose（本地构建）
+
+#### 1. 配置环境变量
+
+```bash
+cp env.template .env
+# 编辑 .env 文件
+```
+
+#### 2. 启动服务
+
+```bash
+# 构建并启动
+docker-compose up -d
+
+# 查看日志
+docker-compose logs -f
+
+# 停止服务
+docker-compose down
+
+# 重新构建
+docker-compose up -d --build
+```
+
+#### 3. 查看运行状态
+
+```bash
+# 查看容器状态
+docker-compose ps
+
+# 查看健康检查
+docker ps
+
+# 进入容器调试
+docker-compose exec app bash
+```
+
+### GitHub Actions 自动构建
+
+项目配置了 GitHub Actions 自动化 CI/CD 流程：
+
+#### 触发条件
+
+- 推送到 `main` 或 `master` 分支
+- 创建 tag（如 `v1.0.0`）
+- 手动触发（workflow_dispatch）
+
+#### 构建流程
+
+1. **代码检出**: 拉取最新代码
+2. **设置构建环境**: 配置 QEMU 和 Docker Buildx
+3. **登录 Registry**: 使用 GITHUB_TOKEN 登录 GHCR
+4. **构建镜像**: 
+   - 支持多架构: `linux/amd64`, `linux/arm64`
+   - 自动生成标签和元数据
+   - 使用 GitHub Actions 缓存加速构建
+5. **推送镜像**: 发布到 GitHub Container Registry
+6. **生成证明**: 创建构建溯源证明
+
+#### 镜像标签策略
+
+- `latest`: 最新的 main/master 分支构建
+- `v1.0.0`: 对应 Git tag
+- `main`: main 分支构建
+- `pr-123`: Pull Request 预览
+
+#### 查看构建状态
+
+访问: `https://github.com/yourusername/AI-Travel-Planner/actions`
+
+### 本地构建 Docker 镜像
+
+```bash
+# 构建镜像
+docker build -t ai-travel-planner:local .
+
+# 运行容器
+docker run -d \
+  --name ai-travel-planner \
+  -p 8000:8000 \
+  --env-file .env \
+  -v $(pwd)/data:/app/data \
+  ai-travel-planner:local
+```
+
+### Docker 镜像优化
+
+当前 Dockerfile 已包含以下优化:
+
+1. **多阶段构建**: 减小最终镜像大小
+2. **精简基础镜像**: 使用 `python:3.10-slim`
+3. **层缓存优化**: 合理安排 COPY 顺序
+4. **健康检查**: 自动监控容器健康状态
+5. **安全加固**: 非 root 用户运行（可选）
 
 ## 监控和维护
 

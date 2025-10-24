@@ -1,5 +1,9 @@
 # AI 旅行规划师 (AI Travel Planner)
 
+[![Build and Push Docker Image](https://github.com/yourusername/AI-Travel-Planner/actions/workflows/docker-build.yml/badge.svg)](https://github.com/yourusername/AI-Travel-Planner/actions/workflows/docker-build.yml)
+[![Docker Image](https://img.shields.io/badge/docker-ghcr.io-blue)](https://github.com/yourusername/AI-Travel-Planner/pkgs/container/ai-travel-planner)
+[![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
+
 一个基于 AI 的智能旅行规划 Web 应用，帮助用户轻松规划旅行路线、管理预算和记录开销。
 
 ## ✨ 功能特性
@@ -44,20 +48,61 @@
 
 ## 📦 安装部署
 
-### 环境要求
+### 🐳 方式 1: 使用 Docker (推荐)
+
+最快速的部署方式，无需配置 Python 和数据库环境。
+
+```bash
+# 1. 克隆项目
+git clone https://github.com/yourusername/AI-Travel-Planner.git
+cd AI-Travel-Planner
+
+# 2. 复制并编辑环境变量
+cp env.template .env
+# 编辑 .env 文件，填入你的 API Keys
+
+# 3. 使用 docker-compose 启动
+docker-compose up -d
+
+# 4. 访问应用
+打开浏览器: http://localhost:8000
+```
+
+**或者使用已发布的镜像：**
+
+```bash
+# 拉取镜像
+docker pull ghcr.io/yourusername/ai-travel-planner:latest
+
+# 运行容器
+docker run -d \
+  --name ai-travel-planner \
+  -p 8000:8000 \
+  --env-file .env \
+  -v $(pwd)/data:/app/data \
+  ghcr.io/yourusername/ai-travel-planner:latest
+```
+
+查看更多 Docker 部署选项：[DEPLOY.md](DEPLOY.md)
+
+---
+
+### 💻 方式 2: 手动安装部署
+
+#### 环境要求
 
 - Python 3.8 或更高版本
-- MySQL 5.7 或更高版本
+- MySQL 5.7 或更高版本（或使用 SQLite）
 - 现代浏览器（Chrome、Firefox、Safari、Edge）
 
-### 1. 克隆项目
+#### 1. 克隆项目
 
 ```bash
 git clone https://github.com/yourusername/AI-Travel-Planner.git
 cd AI-Travel-Planner
 ```
 
-### 2. 安装 Python 依赖
+#### 2. 安装 Python 依赖
 
 ```bash
 # 创建虚拟环境（推荐）
@@ -73,7 +118,7 @@ source venv/bin/activate
 pip install -r requirements.txt
 ```
 
-### 3. 配置数据库
+#### 3. 配置数据库
 
 创建 MySQL 数据库：
 
@@ -81,12 +126,18 @@ pip install -r requirements.txt
 CREATE DATABASE travel_planner CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 ```
 
-### 4. 配置环境变量
+或者使用 SQLite（开发环境）：
 
-复制 `.env.example` 文件为 `.env`：
+```env
+DATABASE_URL=sqlite:///./travel_planner.db
+```
+
+#### 4. 配置环境变量
+
+复制 `env.template` 文件为 `.env`：
 
 ```bash
-cp .env.example .env
+cp env.template .env
 ```
 
 编辑 `.env` 文件，填入您的配置：
@@ -117,7 +168,7 @@ PORT=8000
 DEBUG=True
 ```
 
-### 5. 配置前端地图 API
+#### 5. 配置前端地图 API
 
 编辑 `frontend/index.html`，将高德地图 API Key 替换为您的密钥：
 
@@ -125,13 +176,13 @@ DEBUG=True
 <script type="text/javascript" src="https://webapi.amap.com/maps?v=2.0&key=YOUR_AMAP_KEY"></script>
 ```
 
-### 6. 初始化数据库
+#### 6. 初始化数据库
 
 ```bash
 python -c "from backend.database import init_db; init_db()"
 ```
 
-### 7. 启动服务
+#### 7. 启动服务
 
 ```bash
 python run.py

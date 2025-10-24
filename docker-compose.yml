@@ -1,0 +1,48 @@
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: ai-travel-planner
+    ports:
+      - "8000:8000"
+    environment:
+      # 数据库配置
+      - DATABASE_URL=sqlite:///./travel_planner.db
+      
+      # JWT 密钥 - 生产环境请使用强密钥
+      - SECRET_KEY=your-secret-key-change-in-production
+      
+      # 阿里云百炼 API Key - 需要配置
+      - ALIYUN_BAILIAN_API_KEY=${ALIYUN_BAILIAN_API_KEY}
+      
+      # 高德地图 API Keys - 需要配置
+      - AMAP_WEB_SERVICE_KEY=${AMAP_WEB_SERVICE_KEY}
+      - AMAP_JS_API_KEY=${AMAP_JS_API_KEY}
+      - AMAP_SECURITY_JS_CODE=${AMAP_SECURITY_JS_CODE}
+      
+      # 阿里云语音识别配置（可选）
+      - ALIYUN_ACCESS_KEY_ID=${ALIYUN_ACCESS_KEY_ID:-}
+      - ALIYUN_ACCESS_KEY_SECRET=${ALIYUN_ACCESS_KEY_SECRET:-}
+      - ALIYUN_APP_KEY=${ALIYUN_APP_KEY:-}
+      
+    volumes:
+      # 持久化数据库文件
+      - ./data:/app/data
+      # 开发时挂载代码（可选，生产环境注释掉）
+      # - ./backend:/app/backend
+      # - ./frontend:/app/frontend
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+volumes:
+  data:
+    driver: local
+
