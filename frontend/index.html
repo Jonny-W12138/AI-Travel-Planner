@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI 旅行规划师 - Travel Planner</title>
+    <link rel="stylesheet" href="css/style.css">
+    <!-- 配置高德地图安全密钥 -->
+    <script type="text/javascript">
+        window._AMapSecurityConfig = {
+            securityJsCode: 'f7117e74aca8f34900399c06226b0df6', // ⚠️ 需要替换为你的安全密钥
+        };
+    </script>
+    <!-- 引入高德地图 API -->
+    <script type="text/javascript" src="https://webapi.amap.com/maps?v=2.0&key=95828c7f5a2eb9b1b8feb439fabb22f8"></script>
+    
+    <!-- 引入 Chart.js 图表库 -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <!-- 引入高德地图 UI -->
+    <script src="https://webapi.amap.com/ui/1.1/main.js?v=1.1.1"></script>
+</head>
+<body>
+    <div id="app">
+        <!-- 导航栏 -->
+        <nav class="navbar">
+            <div class="container">
+                <div class="nav-brand">
+                    <h1>🌍 AI 旅行规划师</h1>
+                </div>
+                <div class="nav-menu">
+                    <a href="#home" class="nav-link active">首页</a>
+                    <a href="#plans" class="nav-link">我的行程</a>
+                    <a href="#expenses" class="nav-link">费用管理</a>
+                    <div class="user-menu">
+                        <span id="username" class="hidden"></span>
+                        <button id="loginBtn" class="btn btn-primary">登录</button>
+                        <button id="logoutBtn" class="btn btn-secondary hidden">退出</button>
+                    </div>
+                </div>
+            </div>
+        </nav>
+
+        <!-- 主内容区 -->
+        <main class="main-content">
+            <!-- 登录/注册模态框 -->
+            <div id="authModal" class="modal hidden">
+                <div class="modal-content">
+                    <span class="close">&times;</span>
+                    <h2 id="authTitle">登录</h2>
+                    <form id="authForm">
+                        <div class="form-group" id="emailGroup">
+                            <label for="email">邮箱</label>
+                            <input type="email" id="email" name="email" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="username">用户名</label>
+                            <input type="text" id="usernameInput" name="username" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="password">密码</label>
+                            <input type="password" id="password" name="password" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary btn-block">提交</button>
+                    </form>
+                    <p class="auth-switch">
+                        <span id="authSwitchText">还没有账号？</span>
+                        <a href="#" id="authSwitchLink">立即注册</a>
+                    </p>
+                </div>
+            </div>
+
+            <!-- 首页 - 旅行规划 -->
+            <section id="home" class="section active">
+                <div class="container">
+                    <div class="hero">
+                        <h2>开始你的智能旅行规划</h2>
+                        <p>使用 AI 技术，为你打造专属的旅行体验</p>
+                    </div>
+
+                    <div class="planning-section">
+                        <div class="voice-input-section">
+                            <h3>🎤 语音输入旅行需求</h3>
+                            <div class="voice-controls">
+                                <button id="startRecording" class="btn btn-large btn-primary">
+                                    <span class="icon">🎤</span>
+                                    开始录音
+                                </button>
+                                <button id="stopRecording" class="btn btn-large btn-secondary hidden">
+                                    <span class="icon">⏹</span>
+                                    停止录音
+                                </button>
+                            </div>
+                            <div id="voiceStatus" class="voice-status"></div>
+                            <div id="recognizedText" class="recognized-text"></div>
+                        </div>
+
+                        <div class="or-divider">
+                            <span>或</span>
+                        </div>
+
+                        <div class="text-input-section">
+                            <h3>✍️ 文字输入旅行需求</h3>
+                            <form id="planningForm">
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label for="destination">目的地 *</label>
+                                        <input type="text" id="destination" name="destination" placeholder="例如：江苏南京" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="budget">预算（元）*</label>
+                                        <input type="number" id="budget" name="budget" placeholder="5000" min="0" required>
+                                    </div>
+                                </div>
+
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label for="startDate">开始日期 *</label>
+                                        <input type="date" id="startDate" name="startDate" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="endDate">结束日期 *</label>
+                                        <input type="date" id="endDate" name="endDate" required>
+                                    </div>
+                                </div>
+
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label for="travelersCount">人数 *</label>
+                                        <input type="number" id="travelersCount" name="travelersCount" value="1" min="1" required>
+                                    </div>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="preferences">旅行偏好</label>
+                                    <textarea id="preferences" name="preferences" rows="3" placeholder="例如：喜欢美食和动漫，带孩子"></textarea>
+                                </div>
+
+                                <button type="submit" class="btn btn-primary btn-block btn-large">
+                                    🤖 生成旅行计划
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+
+                    <!-- 生成的行程展示 -->
+                    <div id="itineraryResult" class="itinerary-result hidden">
+                        <h3>📋 AI 生成的旅行计划</h3>
+                        <div id="itineraryContent"></div>
+                        
+                        <!-- 地图展示 -->
+                        <div class="map-section">
+                            <h4>📍 地图导航</h4>
+                            <div id="map" class="map-container"></div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 我的行程 -->
+            <section id="plans" class="section">
+                <div class="container">
+                    <h2>我的旅行计划</h2>
+                    <div id="plansList" class="plans-list"></div>
+                </div>
+            </section>
+
+            <!-- 费用管理 -->
+            <section id="expenses" class="section">
+                <div class="container">
+                    <h2>费用管理</h2>
+                    
+                    <div class="expense-add-section">
+                        <h3>记录开销</h3>
+                        <div class="voice-expense">
+                            <button id="voiceExpenseBtn" class="btn btn-primary">
+                                🎤 语音记录开销
+                            </button>
+                        </div>
+                        
+                        <form id="expenseForm">
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="expenseCategory">类别 *</label>
+                                    <select id="expenseCategory" name="category" required>
+                                        <option value="交通">交通</option>
+                                        <option value="住宿">住宿</option>
+                                        <option value="餐饮">餐饮</option>
+                                        <option value="景点">景点</option>
+                                        <option value="购物">购物</option>
+                                        <option value="其他">其他</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="expenseAmount">金额（元）*</label>
+                                    <input type="number" id="expenseAmount" name="amount" step="0.01" min="0" required>
+                                </div>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="expenseDescription">描述</label>
+                                <input type="text" id="expenseDescription" name="description" placeholder="费用描述">
+                            </div>
+                            
+                            <button type="submit" class="btn btn-primary">添加费用记录</button>
+                        </form>
+                    </div>
+
+                    <div class="expense-summary">
+                        <h3>费用汇总</h3>
+                        <div id="expenseSummary"></div>
+                        
+                        <!-- 分类统计饼图 -->
+                        <div id="categoryChartContainer" style="display: none;">
+                            <h4 style="margin-top: 30px; margin-bottom: 20px; color: #4CAF50; font-size: 24px;">📊 分类统计</h4>
+                            <div style="max-width: 500px; margin: 0 auto;">
+                                <canvas id="categoryChart"></canvas>
+                            </div>
+                        </div>
+                        
+                        <div id="aiAnalysis"></div>
+                    </div>
+
+                    <div class="expense-list">
+                        <h3>费用明细</h3>
+                        <div id="expensesList"></div>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <!-- 页脚 -->
+        <footer class="footer">
+            <div class="container">
+                <p>&copy; 2025 AI 旅行规划师. 使用阿里云百炼、语音识别和高德地图提供技术支持。</p>
+            </div>
+        </footer>
+    </div>
+
+    <!-- 加载提示 -->
+    <div id="loading" class="loading-overlay hidden">
+        <div class="loading-spinner"></div>
+        <p>AI 正在为你规划旅程...</p>
+    </div>
+
+    <!-- 1. 工具函数必须最先加载 -->
+    <script src="js/utils.js"></script>
+    <!-- 2. API 和认证模块 -->
+    <script src="js/api.js"></script>
+    <script src="js/auth.js"></script>
+    <!-- 3. 功能模块 -->
+    <script src="js/voice.js"></script>
+    <script src="js/map.js"></script>
+    <script src="js/travel.js"></script>
+    <script src="js/expense.js"></script>
+    <!-- 4. 应用初始化（最后加载） -->
+    <script src="js/app.js"></script>
+</body>
+</html>
+
