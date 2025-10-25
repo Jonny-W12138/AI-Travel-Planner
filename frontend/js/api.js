@@ -194,7 +194,7 @@ class API {
     }
 
     async parseVoiceQuery(text) {
-        return this.post('/voice/parse-query', null, { text });
+        return this.post('/voice/parse-query', { text });
     }
 
     // 地图相关

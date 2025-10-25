@@ -11,16 +11,53 @@
             securityJsCode: 'f7117e74aca8f34900399c06226b0df6', // ⚠️ 需要替换为你的安全密钥
         };
     </script>
-    <!-- 引入高德地图 API -->
-    <script type="text/javascript" src="https://webapi.amap.com/maps?v=2.0&key=95828c7f5a2eb9b1b8feb439fabb22f8"></script>
+    <!-- 引入高德地图 API - 使用 Loader 方式加载 -->
+    <script type="text/javascript" src="https://webapi.amap.com/maps?v=2.0&key=95828c7f5a2eb9b1b8feb439fabb22f8&callback=initAMap"></script>
+    <!-- 引入 AMapLoader -->
+    <script type="text/javascript" src="https://webapi.amap.com/loader.js"></script>
     
     <!-- 引入 Chart.js 图表库 -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <!-- 引入高德地图 UI -->
     <script src="https://webapi.amap.com/ui/1.1/main.js?v=1.1.1"></script>
+    
+    <!-- 高德地图初始化回调 -->
+    <script type="text/javascript">
+        function initAMap() {
+            console.log('🗺️ 高德地图 API 加载完成');
+            console.log('🗺️ AMap 对象:', window.AMap);
+            console.log('🗺️ AMap 版本:', window.AMap ? window.AMap.v : 'undefined');
+            
+            // 标记地图已加载
+            window.AMapLoaded = true;
+            
+            // 触发自定义事件
+            window.dispatchEvent(new CustomEvent('amapLoaded'));
+        }
+        
+        // 错误处理
+        window.onerror = function(msg, url, line, col, error) {
+            if (msg.includes('AMap') || msg.includes('amap')) {
+                console.error('❌ 高德地图加载错误:', msg);
+                console.error('   文件:', url, '行:', line);
+            }
+        };
+    </script>
 </head>
 <body>
     <div id="app">
+        <!-- 浏览器兼容性提示 -->
+        <div id="browserNotice" class="browser-notice">
+            <div class="browser-notice-content">
+                <div class="browser-notice-icon">🌐</div>
+                <div class="browser-notice-text">
+                    <strong>推荐使用 Chrome 或 Edge 浏览器</strong>
+                    <span>Safari 浏览器可能无法使用语音功能</span>
+                </div>
+                <button id="closeBrowserNotice" class="browser-notice-close">×</button>
+            </div>
+        </div>
+        
         <!-- 导航栏 -->
         <nav class="navbar">
             <div class="container">

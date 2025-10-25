@@ -298,29 +298,58 @@ class AIService:
         Returns:
             提取的旅行信息
         """
-        prompt = f"""请从以下用户语音输入中提取旅行规划信息：
+        prompt = f"""请从以下用户语音输入中智能识别并提取信息：
 
 用户输入：{text}
 
-请提取以下信息（如果有的话）：
-- 目的地
-- 旅行天数
-- 预算
-- 旅行人数
-- 旅行偏好
+首先判断用户意图：
+1. 如果是旅行规划（如"去XX旅游"、"规划旅行"），提取旅行信息
+2. 如果是费用记录（如"花了XX元"、"XX费用"、"记录开销"），提取费用信息
 
-以 JSON 格式返回：
+对于旅行规划，提取：
+- 目的地：旅行的目的地
+- 出发日期：格式 YYYY-MM-DD
+- 结束日期：格式 YYYY-MM-DD
+- 旅行天数：如果没有明确日期，根据天数计算
+- 预算：旅行预算（纯数字）
+- 旅行人数：参与旅行的人数
+- 旅行偏好：用户的喜好、特殊要求（如：喜欢美食、带孩子、历史文化等）
+
+对于费用记录，提取：
+- 类别：交通、住宿、餐饮、景点、购物、其他
+- 金额：费用金额（纯数字）
+- 描述：费用的具体说明
+
+⚠️ 重要：必须返回严格的 JSON 格式，不能包含注释、额外的文字说明或markdown标记。
+
+判断规则：
+- 如果提到"花了"、"费用"、"开销"、"记录"、"支出"等，query_type 为 "expense"
+- 如果提到"去"、"旅游"、"旅行"、"规划"、"想要"、"日期"、"预算"、"人数"等旅行相关内容，query_type 为 "travel_plan"
+- 如果无法判断，query_type 为 "query"
+
+返回 JSON 格式示例：
+
+旅行规划示例：
 {{
-    "destination": "目的地或null",
-    "days": 天数或null,
-    "budget": 预算或null,
-    "travelers_count": 人数或null,
-    "preferences": "偏好描述或null",
-    "query_type": "travel_plan或expense或query"
+    "query_type": "travel_plan",
+    "destination": "重庆",
+    "start_date": "2025-10-27",
+    "end_date": "2025-10-31",
+    "days": 5,
+    "budget": 3000,
+    "travelers_count": 2,
+    "preferences": null
 }}
 
-如果是记录开销，query_type 应为 expense。
-如果是查询信息，query_type 应为 query。
+费用记录示例：
+{{
+    "query_type": "expense",
+    "category": "住宿",
+    "amount": 300,
+    "description": "住宿费用"
+}}
+
+只返回 JSON，不要包含任何其他内容！
 """
         
         try:
@@ -332,21 +361,39 @@ class AIService:
             
             if response.status_code == 200:
                 content = response.output.choices[0].message.content
+                print(f"📢 AI 原始响应: {content[:200]}...")
                 
                 # 提取 JSON
                 start_idx = content.find('{')
                 end_idx = content.rfind('}')
                 if start_idx != -1 and end_idx != -1:
                     json_str = content[start_idx:end_idx + 1]
+                    
+                    # 使用 _clean_json_string 清理 JSON
+                    json_str = AIService._clean_json_string(json_str)
+                    print(f"🧹 清理后的 JSON: {json_str[:200]}...")
+                    
                     result = json.loads(json_str)
+                    print(f"✅ JSON 解析成功: query_type={result.get('query_type')}")
                     return result
+                else:
+                    print(f"❌ 未找到有效的 JSON 结构")
                     
             return {
                 "raw_text": text,
                 "query_type": "query"
             }
             
+        except json.JSONDecodeError as e:
+            print(f"❌ JSON 解析错误: {str(e)}")
+            print(f"   问题 JSON: {json_str if 'json_str' in locals() else 'N/A'}")
+            return {
+                "raw_text": text,
+                "error": str(e),
+                "query_type": "query"
+            }
         except Exception as e:
+            print(f"❌ 语音查询解析异常: {str(e)}")
             return {
                 "raw_text": text,
                 "error": str(e),

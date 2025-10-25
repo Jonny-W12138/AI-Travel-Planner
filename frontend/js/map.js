@@ -12,14 +12,41 @@ class MapManager {
     initMap(container = 'map') {
         console.log('🗺️ 初始化地图...');
         console.log('🗺️ 容器ID:', container);
+        console.log('🗺️ 浏览器:', navigator.userAgent);
         
+        // 检查 AMap 是否已加载
         if (!window.AMap) {
             console.error('❌ 高德地图 API 未加载');
+            console.log('   等待 AMap 加载...');
+            
+            // 等待 AMap 加载完成
+            const checkAMap = () => {
+                if (window.AMap) {
+                    console.log('✅ 高德地图 API 已加载');
+                    this._doInitMap(container);
+                } else {
+                    console.log('   继续等待 AMap...');
+                    setTimeout(checkAMap, 100);
+                }
+            };
+            
+            // 监听 AMap 加载事件
+            window.addEventListener('amapLoaded', () => {
+                console.log('✅ 收到 AMap 加载事件');
+                this._doInitMap(container);
+            });
+            
+            // 备用检查
+            setTimeout(checkAMap, 100);
             return;
         }
         
         console.log('✅ 高德地图 API 已加载');
         console.log('🗺️ AMap 版本:', AMap.v);
+        this._doInitMap(container);
+    }
+    
+    _doInitMap(container) {
         
         // 检查容器是否存在
         const containerElement = document.getElementById(container);
@@ -30,27 +57,58 @@ class MapManager {
         console.log('✅ 地图容器存在, 尺寸:', containerElement.offsetWidth, 'x', containerElement.offsetHeight);
 
         try {
+            // 根据高德地图文档推荐的配置
             this.map = new AMap.Map(container, {
                 zoom: 12,
-                center: [118.796877, 32.060255], // 改为南京中心
-                viewMode: '2D',
+                center: [118.796877, 32.060255], // 南京中心
+                viewMode: '2D', // 使用 2D 模式，兼容性更好
                 resizeEnable: true,
                 rotateEnable: false,
                 pitchEnable: false,
-                pitch: 0,
-                rotation: 0,
                 expandZoomRange: true,
                 zooms: [3, 20],
-                features: ['bg', 'road', 'building', 'point']  // 明确指定要显示的图层
+                // 明确指定要显示的图层，确保底图显示
+                features: ['bg', 'road', 'building', 'point'],
+                // 添加地图样式，确保底图可见
+                mapStyle: 'amap://styles/normal'
             });
             
             console.log('✅ 地图对象创建成功:', this.map);
             
+            // 添加地图错误监听
+            this.map.on('error', (e) => {
+                console.error('❌ 地图错误:', e);
+            });
+            
             // 强制刷新地图
             setTimeout(() => {
-                this.map.setZoom(12);
-                this.map.setCenter([118.796877, 32.060255]);
-                console.log('🔄 地图已刷新');
+                try {
+                    this.map.setZoom(12);
+                    this.map.setCenter([118.796877, 32.060255]);
+                    console.log('🔄 地图已刷新');
+                    
+                    // 检查地图是否真的显示了
+                    setTimeout(() => {
+                        const mapContainer = document.getElementById(container);
+                        const canvas = mapContainer.querySelector('canvas');
+                        if (!canvas || canvas.width === 0 || canvas.height === 0) {
+                            console.error('❌ 地图 Canvas 未正确渲染');
+                            console.log('   容器尺寸:', mapContainer.offsetWidth, 'x', mapContainer.offsetHeight);
+                            console.log('   Canvas尺寸:', canvas ? canvas.width + 'x' + canvas.height : '不存在');
+                            
+                            // 尝试重新初始化
+                            console.log('🔄 尝试重新初始化地图...');
+                            this.map.destroy();
+                            setTimeout(() => {
+                                this._doInitMap(container);
+                            }, 500);
+                        } else {
+                            console.log('✅ 地图 Canvas 渲染正常');
+                        }
+                    }, 1000);
+                } catch (error) {
+                    console.error('❌ 地图刷新失败:', error);
+                }
             }, 100);
             
             // 监听地图加载完成事件
@@ -97,7 +155,41 @@ class MapManager {
             console.log('✅ 地图初始化完成');
         } catch (error) {
             console.error('❌ 地图初始化失败:', error);
+            console.error('   错误详情:', error.message);
+            console.error('   错误堆栈:', error.stack);
+            
+            // 尝试使用 Loader 方式重新加载
+            console.log('🔄 尝试使用 Loader 方式重新加载地图...');
+            this._initMapWithLoader(container);
         }
+    }
+    
+    // 备用方法：使用 Loader 方式加载地图
+    _initMapWithLoader(container) {
+        if (!window.AMapLoader) {
+            console.error('❌ AMapLoader 不可用');
+            return;
+        }
+        
+        AMapLoader.load({
+            key: '95828c7f5a2eb9b1b8feb439fabb22f8',
+            version: '2.0',
+            plugins: ['AMap.Scale', 'AMap.ToolBar']
+        }).then((AMap) => {
+            console.log('✅ AMapLoader 加载成功');
+            
+            this.map = new AMap.Map(container, {
+                zoom: 12,
+                center: [118.796877, 32.060255],
+                viewMode: '2D',
+                mapStyle: 'amap://styles/normal'
+            });
+            
+            console.log('✅ Loader 方式地图创建成功');
+            
+        }).catch((error) => {
+            console.error('❌ AMapLoader 加载失败:', error);
+        });
     }
 
     clearMarkers() {
@@ -239,7 +331,7 @@ class MapManager {
                                                 <h4>${activity.activity}</h4>
                                                 <p>${activity.description || ''}</p>
                                                 <p>时间: ${activity.time || ''}</p>
-                                                <p>预计费用: ¥${activity.estimated_cost || 0}</p>
+                                                // <p>预计费用: ¥${activity.estimated_cost || 0}</p>
                                             </div>
                                         `
                                     });

@@ -202,9 +202,16 @@ python run.py
 
 ### 阿里云语音识别 API
 
+⚠️ **重要**：语音识别功能需要正确配置阿里云智能语音交互服务才能使用。
+
 1. 访问 [阿里云智能语音交互](https://www.aliyun.com/product/nls)
 2. 开通服务并创建项目
-3. 获取 Access Key ID 和 Access Key Secret
+3. 获取：
+   - **AppKey**：项目的应用密钥
+   - **Access Key ID**：阿里云访问密钥 ID
+   - **Access Key Secret**：阿里云访问密钥密文
+
+📖 **详细配置步骤请参考**: [语音识别配置指南 (VOICE_SETUP.md)](VOICE_SETUP.md)
 
 ### 高德地图 API
 

@@ -36,6 +36,7 @@ function showMessage(type, message) {
     };
 
     const messageDiv = document.createElement('div');
+    messageDiv.className = 'app-message'; // 添加类名以便后续查找
     messageDiv.style.cssText = `
         position: fixed;
         top: 80px;
@@ -48,6 +49,7 @@ function showMessage(type, message) {
         z-index: 10000;
         animation: slideIn 0.3s ease-out;
         max-width: 400px;
+        white-space: pre-line;
     `;
     messageDiv.textContent = message;
 
@@ -61,6 +63,16 @@ function showMessage(type, message) {
             }
         }, 300);
     }, 3000);
+}
+
+// 清除所有消息提示
+function clearAllMessages() {
+    const messages = document.querySelectorAll('.app-message');
+    messages.forEach(msg => {
+        if (msg.parentNode) {
+            msg.parentNode.removeChild(msg);
+        }
+    });
 }
 
 // 添加动画样式
