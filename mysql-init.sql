@@ -42,15 +42,15 @@ CREATE TABLE IF NOT EXISTS expenses (
     FOREIGN KEY (travel_plan_id) REFERENCES travel_plans(id) ON DELETE SET NULL
 );
 
--- 创建索引以提高查询性能
-CREATE INDEX IF NOT EXISTS idx_users_username ON users(username);
-CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
-CREATE INDEX IF NOT EXISTS idx_travel_plans_user_id ON travel_plans(user_id);
-CREATE INDEX IF NOT EXISTS idx_travel_plans_destination ON travel_plans(destination);
-CREATE INDEX IF NOT EXISTS idx_expenses_user_id ON expenses(user_id);
-CREATE INDEX IF NOT EXISTS idx_expenses_travel_plan_id ON expenses(travel_plan_id);
-CREATE INDEX IF NOT EXISTS idx_expenses_category ON expenses(category);
-CREATE INDEX IF NOT EXISTS idx_expenses_date ON expenses(date);
+-- 创建索引以提高查询性能（MySQL 8.0 不支持 IF NOT EXISTS）
+CREATE INDEX idx_users_username ON users(username);
+CREATE INDEX idx_users_email ON users(email);
+CREATE INDEX idx_travel_plans_user_id ON travel_plans(user_id);
+CREATE INDEX idx_travel_plans_destination ON travel_plans(destination);
+CREATE INDEX idx_expenses_user_id ON expenses(user_id);
+CREATE INDEX idx_expenses_travel_plan_id ON expenses(travel_plan_id);
+CREATE INDEX idx_expenses_category ON expenses(category);
+CREATE INDEX idx_expenses_date ON expenses(date);
 
 -- 插入示例数据（可选）
 -- INSERT IGNORE INTO users (username, email, hashed_password) VALUES 

@@ -87,9 +87,17 @@ echo "✅ MySQL 配置完成"
 
 # 初始化数据库表结构
 echo "📋 初始化数据库表结构..."
-mysql -u "$MYSQL_USER" -p"$MYSQL_PASSWORD" "$MYSQL_DATABASE" < /app/mysql-init.sql
-
-echo "✅ 数据库表结构初始化完成"
+python -c "
+import sys
+sys.path.append('/app')
+try:
+    from backend.database import init_db
+    init_db()
+    print('✅ 数据库表结构初始化完成')
+except Exception as e:
+    print(f'❌ 数据库表结构初始化失败: {e}')
+    sys.exit(1)
+"
 
 # 测试数据库连接
 echo "🔍 测试数据库连接..."
