@@ -38,4 +38,4 @@ orjson >= 3.10,<4
 
 # Audio processing
 pydub==0.25.1
-audioop-lts=0.2.2
+audioop-lts==0.2.2
