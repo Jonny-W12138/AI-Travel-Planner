@@ -331,7 +331,6 @@ class MapManager {
                                                 <h4>${activity.activity}</h4>
                                                 <p>${activity.description || ''}</p>
                                                 <p>时间: ${activity.time || ''}</p>
-                                                // <p>预计费用: ¥${activity.estimated_cost || 0}</p>
                                             </div>
                                         `
                                     });
