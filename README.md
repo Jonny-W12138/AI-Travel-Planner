@@ -91,8 +91,9 @@ docker run -d \
 
 #### 环境要求
 
-- Python 3.8 或更高版本
+- **Python 3.13** 或更高版本（语音功能需要）
 - MySQL 5.7 或更高版本（或使用 SQLite）
+- **FFmpeg**（语音格式转换需要）
 - 现代浏览器（Chrome、Firefox、Safari、Edge）
 
 #### 1. 克隆项目
@@ -102,7 +103,23 @@ git clone https://github.com/yourusername/AI-Travel-Planner.git
 cd AI-Travel-Planner
 ```
 
-#### 2. 安装 Python 依赖
+#### 2. 安装系统依赖
+
+**macOS:**
+```bash
+brew install ffmpeg
+```
+
+**Ubuntu/Debian:**
+```bash
+sudo apt-get update
+sudo apt-get install ffmpeg
+```
+
+**Windows:**
+从 [FFmpeg 官网](https://ffmpeg.org/download.html) 下载并安装
+
+#### 3. 安装 Python 依赖
 
 ```bash
 # 创建虚拟环境（推荐）
@@ -118,7 +135,7 @@ source venv/bin/activate
 pip install -r requirements.txt
 ```
 
-#### 3. 配置数据库
+#### 4. 配置数据库
 
 创建 MySQL 数据库：
 
@@ -132,7 +149,7 @@ CREATE DATABASE travel_planner CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 DATABASE_URL=sqlite:///./travel_planner.db
 ```
 
-#### 4. 配置环境变量
+#### 5. 配置环境变量
 
 复制 `env.template` 文件为 `.env`：
 
@@ -168,7 +185,7 @@ PORT=8000
 DEBUG=True
 ```
 
-#### 5. 配置前端地图 API
+#### 6. 配置前端地图 API
 
 编辑 `frontend/index.html`，将高德地图 API Key 替换为您的密钥：
 
@@ -176,13 +193,13 @@ DEBUG=True
 <script type="text/javascript" src="https://webapi.amap.com/maps?v=2.0&key=YOUR_AMAP_KEY"></script>
 ```
 
-#### 6. 初始化数据库
+#### 7. 初始化数据库
 
 ```bash
 python -c "from backend.database import init_db; init_db()"
 ```
 
-#### 7. 启动服务
+#### 8. 启动服务
 
 ```bash
 python run.py
