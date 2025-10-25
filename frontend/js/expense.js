@@ -149,18 +149,7 @@ class ExpenseManager {
             // 隐藏图表容器
             document.getElementById('categoryChartContainer').style.display = 'none';
         }
-
-        // AI 分析
-        if (this.summary.ai_analysis) {
-            aiAnalysisContainer.innerHTML = '<h4 style="margin-top: 30px; margin-bottom: 20px; color: #4CAF50; font-size: 24px;">🤖 AI 预算分析</h4>';
-            aiAnalysisContainer.innerHTML += `
-                <div class="ai-analysis">
-                    <p>${this.summary.ai_analysis}</p>
-                </div>
-            `;
-        } else {
-            aiAnalysisContainer.innerHTML = '';
-        }
+        
     }
 
     getCategoryIcon(category) {
