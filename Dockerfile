@@ -19,6 +19,8 @@ RUN apt-get update && apt-get install -y \
     ffmpeg \
     mysql-server \
     mysql-client \
+    libffi-dev \
+    libssl-dev \
     && add-apt-repository ppa:deadsnakes/ppa \
     && apt-get update \
     && apt-get install -y python3.13 \
