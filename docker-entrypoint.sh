@@ -106,8 +106,9 @@ import sys
 sys.path.append('/app')
 try:
     from backend.database import engine
+    from sqlalchemy import text
     with engine.connect() as conn:
-        result = conn.execute('SELECT 1')
+        result = conn.execute(text('SELECT 1'))
         print('✅ 数据库连接测试成功')
 except Exception as e:
     print(f'❌ 数据库连接测试失败: {e}')
