@@ -1,16 +1,30 @@
 # AI 旅行规划师 - 完整容器化部署（包含 MySQL）
-FROM python:3.13-slim
+FROM ubuntu:22.04
 
 # 设置工作目录
 WORKDIR /app
 
-# 安装系统依赖（包括 MySQL 服务器）
+# 设置环境变量，避免交互式安装
+ENV DEBIAN_FRONTEND=noninteractive
+ENV TZ=Asia/Shanghai
+
+# 安装系统依赖和 Python 3.13
 RUN apt-get update && apt-get install -y \
-    build-essential \
+    software-properties-common \
     curl \
+    wget \
+    gnupg \
+    lsb-release \
+    build-essential \
     ffmpeg \
     mysql-server \
     mysql-client \
+    && add-apt-repository ppa:deadsnakes/ppa \
+    && apt-get update \
+    && apt-get install -y python3.13 python3.13-dev python3.13-distutils \
+    && curl -sS https://bootstrap.pypa.io/get-pip.py | python3.13 \
+    && ln -s /usr/bin/python3.13 /usr/bin/python \
+    && ln -s /usr/bin/python3.13 /usr/bin/python3 \
     && rm -rf /var/lib/apt/lists/*
 
 # 复制依赖文件

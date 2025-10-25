@@ -1,124 +1,142 @@
-# Docker 构建说明
+# 🐳 Docker 构建说明
 
-## 🐳 Docker 镜像构建
+## 📋 系统要求
 
-本项目使用 Python 3.13 和 FFmpeg 来支持语音功能。
+- **基础镜像**: Ubuntu 22.04 LTS
+- **Python 版本**: 3.13（通过 deadsnakes PPA 安装）
+- **数据库**: MySQL 8.0（官方 MySQL 包）
+- **FFmpeg**: 音频格式转换
+- **Docker**: 用于容器化部署
 
-### 📋 系统要求
+## 🔧 构建过程
 
-- **Python 3.13+**：语音处理库 `audioop-lts` 需要 Python 3.13
-- **FFmpeg**：音频格式转换需要
-- **Docker**：用于容器化部署
-
-### 🔧 本地构建测试
-
-```bash
-# 1. 克隆项目
-git clone <repository-url>
-cd AI-Travel-Planner
-
-# 2. 构建 Docker 镜像
-docker build -t ai-travel-planner:latest .
-
-# 3. 运行测试脚本
-./test-docker-build.sh
-```
-
-### 🚀 GitHub Actions 自动构建
-
-项目配置了 GitHub Actions 工作流，会在以下情况自动构建：
-
-- 推送到 `main` 分支
-- 创建版本标签（如 `v1.0.0`）
-- 手动触发
-
-### 📦 多架构支持
-
-Docker 镜像支持以下架构：
-- `linux/amd64`（Intel/AMD 64位）
-- `linux/arm64`（ARM 64位，如 Apple Silicon）
-
-### 🔍 构建过程
-
-1. **基础镜像**：`python:3.13-slim`
-2. **系统依赖**：安装 `build-essential`、`curl`、`ffmpeg`
-3. **Python 依赖**：安装 `requirements.txt` 中的所有包
-4. **应用代码**：复制后端和前端文件
-5. **健康检查**：配置 `/api/health` 端点
-6. **启动命令**：`python run.py`
-
-### ⚠️ 常见问题
-
-#### 问题 1：`audioop-lts` 安装失败
-```
-ERROR: Could not find a version that satisfies the requirement audioop-lts==0.2.2
-```
-
-**解决方案**：确保使用 Python 3.13+
+### 1. 基础镜像选择
 ```dockerfile
-FROM python:3.13-slim
+FROM ubuntu:22.04
 ```
 
-#### 问题 2：FFmpeg 未找到
-```
-ERROR: FFmpeg not found
-```
-
-**解决方案**：在 Dockerfile 中安装 FFmpeg
+### 2. 系统依赖安装
 ```dockerfile
 RUN apt-get update && apt-get install -y \
-    build-essential \
+    software-properties-common \
     curl \
+    wget \
+    gnupg \
+    lsb-release \
+    build-essential \
     ffmpeg \
-    && rm -rf /var/lib/apt/lists/*
+    mysql-server \      # 官方 MySQL 8.0
+    mysql-client \     # 官方 MySQL 客户端
+    && add-apt-repository ppa:deadsnakes/ppa \
+    && apt-get update \
+    && apt-get install -y python3.13 python3.13-dev python3.13-distutils \
+    && curl -sS https://bootstrap.pypa.io/get-pip.py | python3.13 \
+    && ln -s /usr/bin/python3.13 /usr/bin/python \
+    && ln -s /usr/bin/python3.13 /usr/bin/python3
 ```
 
-#### 问题 3：依赖版本冲突
-```
-ERROR: No matching distribution found
-```
+### 3. Python 环境配置
+- 通过 `deadsnakes` PPA 安装 Python 3.13
+- 使用 `get-pip.py` 安装 pip
+- 创建符号链接确保 `python` 和 `python3` 指向 Python 3.13
 
-**解决方案**：使用版本范围而不是固定版本
-```txt
-# 使用 >= 而不是 ==
-fastapi>=0.109.0
-pydub>=0.25.1
-audioop-lts>=0.2.2
-```
+### 4. 数据库配置
+- 使用官方 MySQL 8.0 包
+- 预设用户和数据库配置
+- 自动初始化表结构
 
-### 🧪 测试验证
-
-构建完成后，可以通过以下方式验证：
+## 🧪 本地测试
 
 ```bash
-# 1. 运行容器
-docker run -d --name test-container -p 8000:8000 ai-travel-planner:latest
+# 运行测试脚本
+./test-docker-ubuntu.sh
 
-# 2. 检查健康状态
-curl http://localhost:8000/api/health
-
-# 3. 检查日志
-docker logs test-container
-
-# 4. 清理
-docker stop test-container
-docker rm test-container
+# 手动测试
+docker build -t ai-travel-planner:ubuntu-test .
+docker run -d --name test -p 8000:8000 -p 3306:3306 ai-travel-planner:ubuntu-test
 ```
 
-### 📊 镜像大小优化
+## ⚠️ 常见问题
 
-当前镜像大小约 200-300MB，包含：
-- Python 3.13 运行时
-- FFmpeg 音频处理
-- 所有 Python 依赖
-- 应用代码
+### 问题 1：Python 3.13 安装失败
+```
+E: Package 'python3.13' has no installation candidate
+```
 
-如需进一步优化，可以考虑：
-- 使用多阶段构建
-- 移除不必要的依赖
-- 使用 Alpine Linux 基础镜像
+**解决方案**：确保添加了 deadsnakes PPA
+```dockerfile
+RUN add-apt-repository ppa:deadsnakes/ppa \
+    && apt-get update \
+    && apt-get install -y python3.13
+```
 
-### 🔄 持续集成
+### 问题 2：MySQL 启动失败
+```
+ERROR: MySQL service failed to start
+```
+
+**解决方案**：增加等待时间，使用正确的 MySQL 配置
+```bash
+# 在启动脚本中
+sleep 10  # 增加等待时间
+mysql -u root -e "ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY 'password';"
+```
+
+### 问题 3：pip 安装失败
+```
+ERROR: pip install failed
+```
+
+**解决方案**：使用 get-pip.py 安装 pip
+```dockerfile
+RUN curl -sS https://bootstrap.pypa.io/get-pip.py | python3.13
+```
+
+## 📊 镜像大小
+
+- **基础镜像**: Ubuntu 22.04 (~77MB)
+- **系统依赖**: ~200MB
+- **Python 3.13**: ~50MB
+- **MySQL 8.0**: ~150MB
+- **应用代码**: ~50MB
+- **总计**: ~527MB
+
+## 🔄 优化建议
+
+### 多阶段构建（可选）
+```dockerfile
+# 构建阶段
+FROM ubuntu:22.04 as builder
+# ... 安装依赖和构建
+
+# 运行阶段
+FROM ubuntu:22.04 as runtime
+# ... 复制构建结果
+```
+
+### 清理缓存
+```dockerfile
+RUN apt-get clean \
+    && rm -rf /var/lib/apt/lists/* \
+    && pip cache purge
+```
+
+## 🚀 部署流程
+
+1. **构建镜像**: `docker build -t ai-travel-planner:latest .`
+2. **推送镜像**: `docker push ghcr.io/username/ai-travel-planner:latest`
+3. **部署容器**: `docker run -d -p 8000:8000 -p 3306:3306 ai-travel-planner:latest`
+
+## 📝 版本兼容性
+
+| 组件 | 版本 | 兼容性 |
+|------|------|--------|
+| Ubuntu | 22.04 LTS | ✅ 长期支持 |
+| Python | 3.13 | ✅ 最新稳定版 |
+| MySQL | 8.0 | ✅ 官方支持 |
+| FFmpeg | 4.4+ | ✅ 音频处理 |
+
+## 🔄 持续集成
 
 GitHub Actions 工作流配置：
 - 自动构建多架构镜像
@@ -126,7 +144,7 @@ GitHub Actions 工作流配置：
 - 生成构建证明（attestation）
 - 支持缓存加速构建
 
-### 📝 版本管理
+## 📝 版本管理
 
 建议使用语义化版本标签：
 ```bash

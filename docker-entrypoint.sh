@@ -52,7 +52,7 @@ service mysql start
 
 # 等待 MySQL 启动
 echo "⏳ 等待 MySQL 启动..."
-sleep 5
+sleep 10
 
 # 检查 MySQL 是否运行
 if ! pgrep mysqld > /dev/null; then
@@ -65,7 +65,7 @@ echo "✅ MySQL 服务已启动"
 # 配置 MySQL
 echo "🔧 配置 MySQL..."
 mysql -u root -e "
-    SET PASSWORD FOR 'root'@'localhost' = PASSWORD('$MYSQL_ROOT_PASSWORD');
+    ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY '$MYSQL_ROOT_PASSWORD';
     CREATE DATABASE IF NOT EXISTS $MYSQL_DATABASE CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
     CREATE USER IF NOT EXISTS '$MYSQL_USER'@'localhost' IDENTIFIED BY '$MYSQL_PASSWORD';
     CREATE USER IF NOT EXISTS '$MYSQL_USER'@'%' IDENTIFIED BY '$MYSQL_PASSWORD';
