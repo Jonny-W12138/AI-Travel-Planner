@@ -52,7 +52,7 @@ service mysql start
 
 # 等待 MySQL 启动
 echo "⏳ 等待 MySQL 启动..."
-sleep 10
+sleep 15
 
 # 检查 MySQL 是否运行
 if ! pgrep mysqld > /dev/null; then
@@ -62,17 +62,26 @@ fi
 
 echo "✅ MySQL 服务已启动"
 
-# 配置 MySQL
+# 等待 MySQL 完全就绪
+echo "⏳ 等待 MySQL 完全就绪..."
+sleep 5
+
+# 配置 MySQL（先设置 root 密码，然后创建用户和数据库）
 echo "🔧 配置 MySQL..."
-mysql -u root -e "
-    ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY '$MYSQL_ROOT_PASSWORD';
-    CREATE DATABASE IF NOT EXISTS $MYSQL_DATABASE CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-    CREATE USER IF NOT EXISTS '$MYSQL_USER'@'localhost' IDENTIFIED BY '$MYSQL_PASSWORD';
-    CREATE USER IF NOT EXISTS '$MYSQL_USER'@'%' IDENTIFIED BY '$MYSQL_PASSWORD';
-    GRANT ALL PRIVILEGES ON $MYSQL_DATABASE.* TO '$MYSQL_USER'@'localhost';
-    GRANT ALL PRIVILEGES ON $MYSQL_DATABASE.* TO '$MYSQL_USER'@'%';
-    FLUSH PRIVILEGES;
-"
+mysql -u root <<EOF
+ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY '$MYSQL_ROOT_PASSWORD';
+FLUSH PRIVILEGES;
+EOF
+
+# 使用 root 密码创建数据库和用户
+mysql -u root -p"$MYSQL_ROOT_PASSWORD" <<EOF
+CREATE DATABASE IF NOT EXISTS $MYSQL_DATABASE CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+CREATE USER IF NOT EXISTS '$MYSQL_USER'@'localhost' IDENTIFIED BY '$MYSQL_PASSWORD';
+CREATE USER IF NOT EXISTS '$MYSQL_USER'@'%' IDENTIFIED BY '$MYSQL_PASSWORD';
+GRANT ALL PRIVILEGES ON $MYSQL_DATABASE.* TO '$MYSQL_USER'@'localhost';
+GRANT ALL PRIVILEGES ON $MYSQL_DATABASE.* TO '$MYSQL_USER'@'%';
+FLUSH PRIVILEGES;
+EOF
 
 echo "✅ MySQL 配置完成"
 
