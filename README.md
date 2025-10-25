@@ -50,19 +50,19 @@
 
 ### 🐳 方式 1: 使用 Docker (推荐)
 
-最快速的部署方式，无需配置 Python 和数据库环境。
+**一键部署，包含 MySQL 数据库**
 
 ```bash
 # 1. 克隆项目
 git clone https://github.com/yourusername/AI-Travel-Planner.git
 cd AI-Travel-Planner
 
-# 2. 复制并编辑环境变量
-cp env.template .env
-# 编辑 .env 文件，填入你的 API Keys
+# 2. 配置 API 密钥
+cp env.docker .env
+# 编辑 .env 文件，填入您的 API 密钥
 
-# 3. 使用 docker-compose 启动
-docker-compose up -d
+# 3. 一键启动
+./docker-start.sh
 
 # 4. 访问应用
 打开浏览器: http://localhost:8000
@@ -74,14 +74,22 @@ docker-compose up -d
 # 拉取镜像
 docker pull ghcr.io/yourusername/ai-travel-planner:latest
 
-# 运行容器
+# 运行容器（只需配置 API 密钥）
 docker run -d \
   --name ai-travel-planner \
   -p 8000:8000 \
-  --env-file .env \
-  -v $(pwd)/data:/app/data \
+  -p 3306:3306 \
+  -e SECRET_KEY="your-secret-key" \
+  -e ALIYUN_BAILIAN_API_KEY="your-bailian-key" \
+  -e ALIYUN_ASR_APP_KEY="your-asr-key" \
+  -e ALIYUN_ASR_ACCESS_KEY_ID="your-access-key-id" \
+  -e ALIYUN_ASR_ACCESS_KEY_SECRET="your-access-key-secret" \
+  -e AMAP_API_KEY="your-amap-key" \
+  -e AMAP_WEB_SERVICE_KEY="your-amap-web-key" \
   ghcr.io/yourusername/ai-travel-planner:latest
 ```
+
+**详细说明**: 查看 [QUICK_START.md](QUICK_START.md) 和 [DOCKER_DEPLOY.md](DOCKER_DEPLOY.md)
 
 查看更多 Docker 部署选项：[DEPLOY.md](DEPLOY.md)
 

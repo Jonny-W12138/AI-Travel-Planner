@@ -1,10 +1,10 @@
 #!/bin/bash
 
-# AI 旅行规划师 Docker 快速启动脚本
+# AI 旅行规划师 Docker 快速启动脚本（包含 MySQL）
 
 set -e
 
-echo "🚀 AI 旅行规划师 Docker 快速启动"
+echo "🚀 AI 旅行规划师 Docker 快速启动（包含 MySQL）"
 
 # 检查 Docker 是否运行
 if ! docker info > /dev/null 2>&1; then
@@ -26,6 +26,12 @@ if [ ! -f ".env" ]; then
     echo "   - ALIYUN_BAILIAN_API_KEY (AI 功能)"
     echo "   - ALIYUN_ASR_APP_KEY (语音功能)"
     echo "   - AMAP_API_KEY (地图功能)"
+    echo ""
+    echo "📋 MySQL 配置已预设："
+    echo "   - 数据库: travel_planner"
+    echo "   - 用户: travel_user"
+    echo "   - 密码: travel_password"
+    echo "   - Root 密码: root_password"
     echo ""
     read -p "是否继续启动？(y/N): " -n 1 -r
     echo
@@ -61,7 +67,9 @@ docker run -d \
     --name ai-travel-planner \
     --env-file .env \
     -p 8000:8000 \
+    -p 3306:3306 \
     -v "$(pwd)/data:/app/data" \
+    -v mysql_data:/var/lib/mysql \
     --restart unless-stopped \
     ai-travel-planner:latest
 
@@ -73,8 +81,8 @@ else
 fi
 
 # 等待服务启动
-echo "⏳ 等待服务启动..."
-sleep 10
+echo "⏳ 等待服务启动（MySQL 需要更长时间）..."
+sleep 15
 
 # 检查服务状态
 echo "🔍 检查服务状态..."
@@ -84,14 +92,24 @@ if curl -f http://localhost:8000/api/health > /dev/null 2>&1; then
     echo "🎉 AI 旅行规划师已成功启动！"
     echo "   访问地址: http://localhost:8000"
     echo "   健康检查: http://localhost:8000/api/health"
+    echo "   MySQL 端口: 3306"
     echo ""
     echo "📋 管理命令："
     echo "   查看日志: docker logs ai-travel-planner"
     echo "   停止服务: docker stop ai-travel-planner"
     echo "   重启服务: docker restart ai-travel-planner"
     echo "   删除容器: docker rm -f ai-travel-planner"
+    echo ""
+    echo "🗄️  MySQL 连接信息："
+    echo "   主机: localhost"
+    echo "   端口: 3306"
+    echo "   数据库: travel_planner"
+    echo "   用户: travel_user"
+    echo "   密码: travel_password"
+    echo "   Root 密码: root_password"
 else
     echo "⚠️  服务健康检查失败，但容器可能仍在启动中"
     echo "   查看日志: docker logs ai-travel-planner"
     echo "   访问地址: http://localhost:8000"
+    echo "   MySQL 可能需要更长时间启动"
 fi

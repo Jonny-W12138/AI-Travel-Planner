@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# AI 旅行规划师 Docker 启动脚本
+# AI 旅行规划师 Docker 启动脚本（包含 MySQL）
 
 set -e
 
@@ -23,9 +23,15 @@ check_env() {
 # 检查关键环境变量
 echo "🔍 检查环境变量配置..."
 check_env "SECRET_KEY" "$SECRET_KEY" "your-secret-key-change-in-production"
-check_env "DATABASE_URL" "$DATABASE_URL" "sqlite:///./data/travel_planner.db"
+check_env "DATABASE_URL" "$DATABASE_URL" "mysql+pymysql://travel_user:travel_password@localhost:3306/travel_planner"
 check_env "HOST" "$HOST" "0.0.0.0"
 check_env "PORT" "$PORT" "8000"
+
+# MySQL 配置
+check_env "MYSQL_ROOT_PASSWORD" "$MYSQL_ROOT_PASSWORD" "root_password"
+check_env "MYSQL_DATABASE" "$MYSQL_DATABASE" "travel_planner"
+check_env "MYSQL_USER" "$MYSQL_USER" "travel_user"
+check_env "MYSQL_PASSWORD" "$MYSQL_PASSWORD" "travel_password"
 
 # 检查 API 密钥
 if [ -z "$ALIYUN_BAILIAN_API_KEY" ]; then
@@ -40,34 +46,66 @@ if [ -z "$AMAP_API_KEY" ]; then
     echo "⚠️  AMAP_API_KEY 未设置，地图功能将不可用"
 fi
 
-# 创建数据目录
-echo "📁 创建数据目录..."
-mkdir -p /app/data
+# 启动 MySQL 服务
+echo "🗄️  启动 MySQL 服务..."
+service mysql start
 
-# 初始化数据库
-echo "🗄️  初始化数据库..."
+# 等待 MySQL 启动
+echo "⏳ 等待 MySQL 启动..."
+sleep 5
+
+# 检查 MySQL 是否运行
+if ! pgrep mysqld > /dev/null; then
+    echo "❌ MySQL 启动失败"
+    exit 1
+fi
+
+echo "✅ MySQL 服务已启动"
+
+# 配置 MySQL
+echo "🔧 配置 MySQL..."
+mysql -u root -e "
+    SET PASSWORD FOR 'root'@'localhost' = PASSWORD('$MYSQL_ROOT_PASSWORD');
+    CREATE DATABASE IF NOT EXISTS $MYSQL_DATABASE CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+    CREATE USER IF NOT EXISTS '$MYSQL_USER'@'localhost' IDENTIFIED BY '$MYSQL_PASSWORD';
+    CREATE USER IF NOT EXISTS '$MYSQL_USER'@'%' IDENTIFIED BY '$MYSQL_PASSWORD';
+    GRANT ALL PRIVILEGES ON $MYSQL_DATABASE.* TO '$MYSQL_USER'@'localhost';
+    GRANT ALL PRIVILEGES ON $MYSQL_DATABASE.* TO '$MYSQL_USER'@'%';
+    FLUSH PRIVILEGES;
+"
+
+echo "✅ MySQL 配置完成"
+
+# 初始化数据库表结构
+echo "📋 初始化数据库表结构..."
+mysql -u "$MYSQL_USER" -p"$MYSQL_PASSWORD" "$MYSQL_DATABASE" < /app/mysql-init.sql
+
+echo "✅ 数据库表结构初始化完成"
+
+# 测试数据库连接
+echo "🔍 测试数据库连接..."
 python -c "
 import sys
 sys.path.append('/app')
 try:
-    from backend.database import init_db
-    init_db()
-    print('✅ 数据库初始化成功')
+    from backend.database import engine
+    with engine.connect() as conn:
+        result = conn.execute('SELECT 1')
+        print('✅ 数据库连接测试成功')
 except Exception as e:
-    print(f'❌ 数据库初始化失败: {e}')
+    print(f'❌ 数据库连接测试失败: {e}')
     sys.exit(1)
 "
 
-# 检查数据库文件
-if [ -f "/app/data/travel_planner.db" ]; then
-    echo "✅ 数据库文件已创建"
-else
-    echo "⚠️  数据库文件未找到，但继续启动..."
-fi
+# 创建数据目录
+echo "📁 创建数据目录..."
+mkdir -p /app/data
 
 # 显示配置信息
 echo "📋 当前配置:"
 echo "   - 数据库: $DATABASE_URL"
+echo "   - MySQL 用户: $MYSQL_USER"
+echo "   - MySQL 数据库: $MYSQL_DATABASE"
 echo "   - 主机: $HOST"
 echo "   - 端口: $PORT"
 echo "   - 调试模式: $DEBUG"
@@ -76,6 +114,7 @@ echo "   - 调试模式: $DEBUG"
 echo "🌟 启动 AI 旅行规划师..."
 echo "   访问地址: http://localhost:$PORT"
 echo "   健康检查: http://localhost:$PORT/api/health"
+echo "   MySQL 端口: 3306"
 
 # 执行传入的命令
 exec "$@"
