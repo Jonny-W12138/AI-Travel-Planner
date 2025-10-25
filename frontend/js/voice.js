@@ -182,7 +182,7 @@ class VoiceRecognizer {
             console.log('✅ 语音识别API返回:', result);
             
             if (result && result.text) {
-                this.displayRecognizedText(result.text);
+                // this.displayRecognizedText(result.text);
                 
                 // 使用 AI 解析语音内容
                 await this.parseQuery(result.text);
@@ -197,10 +197,10 @@ class VoiceRecognizer {
         }
     }
 
-    displayRecognizedText(text) {
-        const recognizedText = document.getElementById('recognizedText');
-        recognizedText.textContent = `识别结果：${text}`;
-    }
+    // displayRecognizedText(text) {
+    //     const recognizedText = document.getElementById('recognizedText');
+    //     recognizedText.textContent = `识别结果：${text}`;
+    // }
 
     async parseQuery(text) {
         try {
