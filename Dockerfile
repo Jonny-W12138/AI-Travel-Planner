@@ -23,8 +23,8 @@ RUN apt-get update && apt-get install -y \
     && apt-get update \
     && apt-get install -y python3.13 \
     && curl -sS https://bootstrap.pypa.io/get-pip.py | python3.13 \
-    && ln -s /usr/bin/python3.13 /usr/bin/python \
-    && ln -s /usr/bin/python3.13 /usr/bin/python3 \
+    && ln -sf /usr/bin/python3.13 /usr/bin/python \
+    && ln -sf /usr/bin/python3.13 /usr/bin/python3 \
     && rm -rf /var/lib/apt/lists/*
 
 # 复制依赖文件
