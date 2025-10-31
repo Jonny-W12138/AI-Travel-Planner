@@ -90,12 +90,11 @@ class AIService:
 3. 所有费用估算必须使用纯数字（不要使用文字描述或数学表达式）
 4. 确保返回完整有效的 JSON 格式
 5. **重要**：每个活动必须包含 "poi_name" 字段，填写精确的景点名称用于地图搜索
-   - 例如："参观总统府" 的 poi_name 应为 "南京总统府"
-   - 例如："游览中山陵" 的 poi_name 应为 "中山陵"
-   - 例如："夫子庙逛街" 的 poi_name 应为 "夫子庙"
-   - poi_name 应该是可以在地图上直接搜索到的标准景点名称
+6. **必须提供具体的酒店名称和餐厅名称**，不要使用笼统的建议
+   - 酒店：必须给出3-5个具体酒店名称，包含酒店的完整名称、大致价格区间、地址
+   - 餐厅：每餐必须推荐1-2个具体餐厅名称、特色菜品、人均消费、地址
 
-请生成一个详细的旅行计划，包括每日行程、交通建议、住宿推荐和预算分析。
+请生成一个详细的旅行计划，包括每日行程、交通建议、具体的酒店和餐厅推荐、预算分析。
 
 请严格按照以下 JSON 格式返回（注意：所有 cost 相关字段必须是纯数字）：
 {{
@@ -116,11 +115,36 @@ class AIService:
                 }}
             ],
             "meals": {{
-                "breakfast": "早餐建议",
-                "lunch": "午餐建议",
-                "dinner": "晚餐建议"
+                "breakfast": {{
+                    "restaurant_name": "具体餐厅名称",
+                    "address": "餐厅地址",
+                    "specialty": "特色菜品",
+                    "avg_cost": 30,
+                    "poi_name": "餐厅POI名称用于地图搜索"
+                }},
+                "lunch": {{
+                    "restaurant_name": "具体餐厅名称",
+                    "address": "餐厅地址",
+                    "specialty": "特色菜品",
+                    "avg_cost": 50,
+                    "poi_name": "餐厅POI名称用于地图搜索"
+                }},
+                "dinner": {{
+                    "restaurant_name": "具体餐厅名称",
+                    "address": "餐厅地址",
+                    "specialty": "特色菜品",
+                    "avg_cost": 80,
+                    "poi_name": "餐厅POI名称用于地图搜索"
+                }}
             }},
-            "accommodation": "住宿建议"
+            "accommodation": {{
+                "hotel_name": "具体酒店名称",
+                "address": "酒店地址",
+                "room_type": "房型建议",
+                "price_per_night": 300,
+                "poi_name": "酒店POI名称用于地图搜索",
+                "features": ["酒店特色1", "酒店特色2"]
+            }}
         }}
     ],
     "transportation": {{
@@ -130,11 +154,48 @@ class AIService:
     }},
     "accommodation_summary": {{
         "type": "酒店类型",
-        "suggestions": ["酒店建议1", "酒店建议2"],
+        "hotels": [
+            {{
+                "name": "具体酒店名称1",
+                "address": "酒店地址",
+                "price_range": "价格区间（如：200-400元/晚）",
+                "rating": "评分（如：4.5星）",
+                "poi_name": "酒店POI名称",
+                "features": ["特色1", "特色2"]
+            }},
+            {{
+                "name": "具体酒店名称2",
+                "address": "酒店地址",
+                "price_range": "价格区间",
+                "rating": "评分",
+                "poi_name": "酒店POI名称",
+                "features": ["特色1", "特色2"]
+            }}
+        ],
         "estimated_cost_per_night": 200,
         "total_nights": 3,
         "total_cost": 600
     }},
+    "restaurant_recommendations": [
+        {{
+            "name": "推荐餐厅名称1",
+            "cuisine_type": "菜系",
+            "address": "餐厅地址",
+            "specialty": "招牌菜",
+            "avg_cost": 60,
+            "poi_name": "餐厅POI名称",
+            "recommended_for": "推荐用餐时段（早餐/午餐/晚餐）"
+        }},
+        {{
+            "name": "推荐餐厅名称2",
+            "cuisine_type": "菜系",
+            "address": "餐厅地址",
+            "specialty": "招牌菜",
+            "avg_cost": 80,
+            "poi_name": "餐厅POI名称",
+            "recommended_for": "推荐用餐时段"
+        }}
+    ],
     "budget_breakdown": {{
         "transportation": 500,
         "accommodation": 600,
@@ -150,14 +211,16 @@ class AIService:
 请确保：
 1. 预算分析合理，总费用接近但不超过预算
 2. 所有数字字段使用纯数字（如 100 而不是 "约100" 或 "100元"）
-3. 推荐的景点和场所都是真实存在的正规场所
+3. 推荐的景点、酒店、餐厅都是真实存在的正规场所
 4. 内容健康积极，不涉及任何敏感话题
-5. **每个 activity 都必须有 poi_name 字段**，用于地图精确定位
+5. **每个 activity、hotel、restaurant 都必须有 poi_name 字段**，用于地图精确定位
+6. **必须提供具体的酒店和餐厅名称**，包含完整地址和联系方式建议
 
-示例说明：
-- activity: "参观南京博物院", poi_name: "南京博物院"
-- activity: "游览玄武湖", poi_name: "玄武湖"
-- activity: "夫子庙品尝小吃", poi_name: "夫子庙"
+酒店推荐示例：
+- name: "南京金陵饭店", address: "汉中路2号", price_range: "500-800元/晚", poi_name: "南京金陵饭店"
+
+餐厅推荐示例：
+- restaurant_name: "南京大牌档（德基广场店）", address: "中山路18号德基广场", specialty: "盐水鸭、鸭血粉丝汤", avg_cost: 80, poi_name: "南京大牌档德基广场店"
 
 只返回 JSON 内容，不要添加其他解释文字。
 """

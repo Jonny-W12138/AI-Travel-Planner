@@ -264,13 +264,15 @@ class MapManager {
         console.log('🗺️ 正在定位目的地:', destination);
         const cityCenter = await this.showLocation(destination);
 
-        // 如果有每日行程，标记景点
+        // 如果有每日行程，标记景点、餐厅和酒店
         if (itinerary.daily_itinerary) {
             console.log(`🗺️ 找到 ${itinerary.daily_itinerary.length} 天的行程`);
             const allLocations = [];
 
             for (const day of itinerary.daily_itinerary) {
                 console.log(`🗺️ 处理第 ${day.day} 天的行程`);
+                
+                // 标记活动景点
                 if (day.activities) {
                     console.log(`🗺️ 第 ${day.day} 天有 ${day.activities.length} 个活动`);
                     for (const activity of day.activities) {
@@ -283,72 +285,66 @@ class MapManager {
                             }
                             
                             console.log(`🗺️ 正在标记景点: ${activity.activity} - 搜索词: ${searchKeyword}`);
-                            try {
-                                // 优先使用 POI 搜索（更准确）
-                                let result = await api.searchPOI(searchKeyword, cityName);
-                                
-                                // 如果 POI 搜索失败或没结果，使用地理编码
-                                if (!result.success || !result.data || result.data.length === 0) {
-                                    console.log(`⚠️ POI搜索失败，尝试地理编码: ${searchKeyword}`);
-                                    const fullAddress = `${cityName}${activity.location}`;
-                                    result = await api.geocode(fullAddress);
+                            const coords = await this._addLocationMarker(
+                                searchKeyword, cityName, activity.location,
+                                `第${day.day}天: ${activity.activity}`,
+                                'attraction',
+                                {
+                                    title: activity.activity,
+                                    description: activity.description,
+                                    time: activity.time
                                 }
-                                
-                                // 从结果中提取坐标
-                                let longitude, latitude;
-                                if (result.success && result.data) {
-                                    if (Array.isArray(result.data) && result.data.length > 0) {
-                                        // POI 搜索结果
-                                        const poi = result.data[0];
-                                        longitude = poi.location.longitude;
-                                        latitude = poi.location.latitude;
-                                        console.log(`✅ POI搜索成功: ${poi.name} [${longitude}, ${latitude}]`);
-                                    } else if (result.data.longitude && result.data.latitude) {
-                                        // 地理编码结果
-                                        longitude = result.data.longitude;
-                                        latitude = result.data.latitude;
-                                        console.log(`✅ 地理编码成功: [${longitude}, ${latitude}]`);
-                                    }
-                                }
-                                
-                                if (longitude && latitude) {
-                                    allLocations.push([longitude, latitude]);
-
-                                    // 添加标记
-                                    const marker = new AMap.Marker({
-                                        position: [longitude, latitude],
-                                        title: activity.activity,
-                                        label: {
-                                            content: `第${day.day}天: ${activity.activity}`,
-                                            direction: 'top'
-                                        }
-                                    });
-
-                                    // 添加信息窗口
-                                    const infoWindow = new AMap.InfoWindow({
-                                        content: `
-                                            <div style="padding: 10px;">
-                                                <h4>${activity.activity}</h4>
-                                                <p>${activity.description || ''}</p>
-                                                <p>时间: ${activity.time || ''}</p>
-                                            </div>
-                                        `
-                                    });
-
-                                    marker.on('click', () => {
-                                        infoWindow.open(this.map, marker.getPosition());
-                                    });
-
-                                    this.map.add(marker);
-                                    this.markers.push(marker);
-                                } else {
-                                    console.warn(`⚠️ 无法获取景点坐标: ${activity.activity}`);
-                                }
-                            } catch (error) {
-                                console.error('❌ 标记景点错误:', error);
-                            }
+                            );
+                            if (coords) allLocations.push(coords);
                         }
                     }
+                }
+                
+                // 标记餐厅
+                if (day.meals) {
+                    const meals = [
+                        { type: 'breakfast', name: '早餐', meal: day.meals.breakfast },
+                        { type: 'lunch', name: '午餐', meal: day.meals.lunch },
+                        { type: 'dinner', name: '晚餐', meal: day.meals.dinner }
+                    ];
+                    
+                    for (const { type, name, meal } of meals) {
+                        if (meal && typeof meal === 'object' && meal.restaurant_name) {
+                            console.log(`🗺️ 正在标记${name}餐厅: ${meal.restaurant_name}`);
+                            const searchKeyword = meal.poi_name || meal.restaurant_name;
+                            const coords = await this._addLocationMarker(
+                                searchKeyword, cityName, meal.address || '',
+                                `第${day.day}天${name}: ${meal.restaurant_name}`,
+                                'restaurant',
+                                {
+                                    title: meal.restaurant_name,
+                                    address: meal.address,
+                                    specialty: meal.specialty,
+                                    avgCost: meal.avg_cost
+                                }
+                            );
+                            // 不将餐厅加入路径规划
+                        }
+                    }
+                }
+                
+                // 标记酒店
+                if (day.accommodation && typeof day.accommodation === 'object' && day.accommodation.hotel_name) {
+                    console.log(`🗺️ 正在标记酒店: ${day.accommodation.hotel_name}`);
+                    const searchKeyword = day.accommodation.poi_name || day.accommodation.hotel_name;
+                    const coords = await this._addLocationMarker(
+                        searchKeyword, cityName, day.accommodation.address || '',
+                        `第${day.day}天住宿: ${day.accommodation.hotel_name}`,
+                        'hotel',
+                        {
+                            title: day.accommodation.hotel_name,
+                            address: day.accommodation.address,
+                            roomType: day.accommodation.room_type,
+                            price: day.accommodation.price_per_night,
+                            features: day.accommodation.features
+                        }
+                    );
+                    // 不将酒店加入路径规划
                 }
             }
 
@@ -367,6 +363,115 @@ class MapManager {
         // 如果没有详细行程数据，至少显示目的地信息
         if (!itinerary.daily_itinerary || itinerary.daily_itinerary.length === 0) {
             console.log('⚠️ 没有详细行程数据，仅显示目的地位置');
+        }
+    }
+
+    /**
+     * 添加位置标记的辅助函数
+     * @param {string} searchKeyword - 搜索关键词
+     * @param {string} cityName - 城市名称
+     * @param {string} locationStr - 位置描述
+     * @param {string} label - 标签文本
+     * @param {string} markerType - 标记类型: 'attraction', 'restaurant', 'hotel'
+     * @param {object} info - 详细信息对象
+     * @returns {Array|null} 坐标 [lng, lat] 或 null
+     */
+    async _addLocationMarker(searchKeyword, cityName, locationStr, label, markerType, info) {
+        try {
+            // 优先使用 POI 搜索（更准确）
+            let result = await api.searchPOI(searchKeyword, cityName);
+            
+            // 如果 POI 搜索失败或没结果，使用地理编码
+            if (!result.success || !result.data || result.data.length === 0) {
+                console.log(`⚠️ POI搜索失败，尝试地理编码: ${searchKeyword}`);
+                const fullAddress = `${cityName}${locationStr}`;
+                result = await api.geocode(fullAddress);
+            }
+            
+            // 从结果中提取坐标
+            let longitude, latitude;
+            if (result.success && result.data) {
+                if (Array.isArray(result.data) && result.data.length > 0) {
+                    // POI 搜索结果
+                    const poi = result.data[0];
+                    longitude = poi.location.longitude;
+                    latitude = poi.location.latitude;
+                    console.log(`✅ POI搜索成功: ${poi.name} [${longitude}, ${latitude}]`);
+                } else if (result.data.longitude && result.data.latitude) {
+                    // 地理编码结果
+                    longitude = result.data.longitude;
+                    latitude = result.data.latitude;
+                    console.log(`✅ 地理编码成功: [${longitude}, ${latitude}]`);
+                }
+            }
+            
+            if (longitude && latitude) {
+                // 根据类型选择不同的图标和颜色
+                let iconStyle = {};
+                let infoContent = '';
+                
+                if (markerType === 'restaurant') {
+                    // 餐厅标记 - 橙色
+                    infoContent = `
+                        <div style="padding: 10px; min-width: 200px;">
+                            <h4 style="margin: 0 0 10px 0; color: #FF9800;">🍴 ${info.title}</h4>
+                            ${info.address ? `<p style="margin: 5px 0;">📍 ${info.address}</p>` : ''}
+                            ${info.specialty ? `<p style="margin: 5px 0;">🍽️ 推荐: ${info.specialty}</p>` : ''}
+                            ${info.avgCost ? `<p style="margin: 5px 0;">💰 人均: ¥${info.avgCost}</p>` : ''}
+                        </div>
+                    `;
+                } else if (markerType === 'hotel') {
+                    // 酒店标记 - 绿色
+                    infoContent = `
+                        <div style="padding: 10px; min-width: 200px;">
+                            <h4 style="margin: 0 0 10px 0; color: #4CAF50;">🏨 ${info.title}</h4>
+                            ${info.address ? `<p style="margin: 5px 0;">📍 ${info.address}</p>` : ''}
+                            ${info.roomType ? `<p style="margin: 5px 0;">🛏️ 房型: ${info.roomType}</p>` : ''}
+                            ${info.price ? `<p style="margin: 5px 0;">💰 价格: ¥${info.price}/晚</p>` : ''}
+                            ${info.features && info.features.length > 0 ? `<p style="margin: 5px 0;">✨ ${info.features.join('、')}</p>` : ''}
+                        </div>
+                    `;
+                } else {
+                    // 景点标记 - 蓝色（默认）
+                    infoContent = `
+                        <div style="padding: 10px; min-width: 200px;">
+                            <h4 style="margin: 0 0 10px 0; color: #2196F3;">🎫 ${info.title}</h4>
+                            ${info.description ? `<p style="margin: 5px 0;">${info.description}</p>` : ''}
+                            ${info.time ? `<p style="margin: 5px 0;">⏰ ${info.time}</p>` : ''}
+                        </div>
+                    `;
+                }
+
+                // 添加标记
+                const marker = new AMap.Marker({
+                    position: [longitude, latitude],
+                    title: info.title,
+                    label: {
+                        content: label,
+                        direction: 'top'
+                    }
+                });
+
+                // 添加信息窗口
+                const infoWindow = new AMap.InfoWindow({
+                    content: infoContent
+                });
+
+                marker.on('click', () => {
+                    infoWindow.open(this.map, marker.getPosition());
+                });
+
+                this.map.add(marker);
+                this.markers.push(marker);
+                
+                return [longitude, latitude];
+            } else {
+                console.warn(`⚠️ 无法获取坐标: ${searchKeyword}`);
+                return null;
+            }
+        } catch (error) {
+            console.error('❌ 标记地点错误:', error);
+            return null;
         }
     }
 

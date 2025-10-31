@@ -85,11 +85,51 @@ class TravelPlanner {
             }
         }
 
+        // 生成侧边栏导航目录
+        let sidebarHtml = '<div class="itinerary-sidebar">';
+        sidebarHtml += '<h5>📑 快速导航</h5>';
+        sidebarHtml += '<div class="sidebar-nav-links">';
+        
+        // 添加概述链接
+        if (itinerary.overview) {
+            sidebarHtml += '<a href="javascript:void(0)" class="sidebar-nav-link" data-target="overview">📝 行程概述</a>';
+        }
+        
+        // 添加每日行程链接
+        if (itinerary.daily_itinerary && itinerary.daily_itinerary.length > 0) {
+            itinerary.daily_itinerary.forEach(day => {
+                sidebarHtml += `<a href="javascript:void(0)" class="sidebar-nav-link" data-target="day-${day.day}">📅 第${day.day}天</a>`;
+            });
+        }
+        
+        // 添加其他快速链接
+        if (itinerary.transportation) {
+            sidebarHtml += '<a href="javascript:void(0)" class="sidebar-nav-link" data-target="transportation">🚗 交通建议</a>';
+        }
+        if (itinerary.accommodation_summary) {
+            sidebarHtml += '<a href="javascript:void(0)" class="sidebar-nav-link" data-target="hotels">🏨 酒店推荐</a>';
+        }
+        if (itinerary.restaurant_recommendations && itinerary.restaurant_recommendations.length > 0) {
+            sidebarHtml += '<a href="javascript:void(0)" class="sidebar-nav-link" data-target="restaurants">🍴 美食推荐</a>';
+        }
+        if (plan.budget_breakdown) {
+            sidebarHtml += '<a href="javascript:void(0)" class="sidebar-nav-link" data-target="budget-analysis">💰 预算分析</a>';
+        }
+        if (itinerary.tips && itinerary.tips.length > 0) {
+            sidebarHtml += '<a href="javascript:void(0)" class="sidebar-nav-link" data-target="tips">💡 旅行建议</a>';
+        }
+        
+        sidebarHtml += '</div>';
+        sidebarHtml += '</div>';
+
         let html = `
-            <div class="itinerary-header">
-                <h4>${plan.title}</h4>
-                <p class="meta">📍 ${plan.destination} | 📅 ${plan.days} 天 | 💰 预算 ¥${plan.budget}</p>
-            </div>
+            <div class="itinerary-container">
+                ${sidebarHtml}
+                <div class="itinerary-main">
+                    <div class="itinerary-header">
+                        <h4>${plan.title}</h4>
+                        <p class="meta">📍 ${plan.destination} | 📅 ${plan.days} 天 | 💰 预算 ¥${plan.budget}</p>
+                    </div>
         `;
 
         // 如果有错误信息，显示错误
@@ -106,7 +146,7 @@ class TravelPlanner {
         if (itinerary.overview) {
             // 移除可能存在的 JSON 代码块标记
             let overview = itinerary.overview.replace(/```json\s*/g, '').replace(/```\s*/g, '');
-            html += '<h4 style="margin-top: 30px; margin-bottom: 20px; color: #4CAF50; font-size: 24px;">📝 行程概述</h4>';
+            html += '<h4 id="overview" class="section-title" style="margin-top: 30px; margin-bottom: 20px; color: #4CAF50; font-size: 24px;">📝 行程概述</h4>';
             html += `
                 <div class="overview-section">
                     <p>${overview}</p>
@@ -119,8 +159,8 @@ class TravelPlanner {
             html += '<div class="daily-section">';
             itinerary.daily_itinerary.forEach(day => {
                 html += `
-                    <div class="day-itinerary">
-                        <h4>第 ${day.day} 天${day.title ? ': ' + day.title : ''}</h4>
+                    <div class="day-itinerary" id="day-${day.day}">
+                        <h4 class="section-title">第 ${day.day} 天${day.title ? ': ' + day.title : ''}</h4>
                 `;
 
                 // 活动安排
@@ -139,24 +179,78 @@ class TravelPlanner {
                     });
                 }
 
-                // 用餐建议
-                if (day.meals) {
+                // 检查是否是最后一天（离开日期）
+                const isLastDay = itinerary.daily_itinerary && day.day === itinerary.daily_itinerary.length;
+                const isDepartureDay = day.title && (day.title.includes('离开') || day.title.includes('返回') || day.title.includes('回程'));
+                
+                // 用餐建议 - 离开当天不显示
+                if (day.meals && !isDepartureDay) {
                     html += '<div class="meals-section">';
                     html += '<h5>🍽️ 用餐建议</h5>';
-                    if (day.meals.breakfast) html += `<p><strong>早餐:</strong> ${day.meals.breakfast}</p>`;
-                    if (day.meals.lunch) html += `<p><strong>午餐:</strong> ${day.meals.lunch}</p>`;
-                    if (day.meals.dinner) html += `<p><strong>晚餐:</strong> ${day.meals.dinner}</p>`;
+                    
+                    // 早餐
+                    if (day.meals.breakfast) {
+                        if (typeof day.meals.breakfast === 'object') {
+                            html += `<div class="meal-item">
+                                <p><strong>早餐:</strong> ${day.meals.breakfast.restaurant_name || '待定'}</p>
+                                ${day.meals.breakfast.address ? `<p class="meal-detail">📍 ${day.meals.breakfast.address}</p>` : ''}
+                                ${day.meals.breakfast.specialty ? `<p class="meal-detail">🍴 推荐: ${day.meals.breakfast.specialty}</p>` : ''}
+                                ${day.meals.breakfast.avg_cost ? `<p class="meal-detail">💰 人均: ¥${day.meals.breakfast.avg_cost}</p>` : ''}
+                            </div>`;
+                        } else {
+                            html += `<p><strong>早餐:</strong> ${day.meals.breakfast}</p>`;
+                        }
+                    }
+                    
+                    // 午餐
+                    if (day.meals.lunch) {
+                        if (typeof day.meals.lunch === 'object') {
+                            html += `<div class="meal-item">
+                                <p><strong>午餐:</strong> ${day.meals.lunch.restaurant_name || '待定'}</p>
+                                ${day.meals.lunch.address ? `<p class="meal-detail">📍 ${day.meals.lunch.address}</p>` : ''}
+                                ${day.meals.lunch.specialty ? `<p class="meal-detail">🍴 推荐: ${day.meals.lunch.specialty}</p>` : ''}
+                                ${day.meals.lunch.avg_cost ? `<p class="meal-detail">💰 人均: ¥${day.meals.lunch.avg_cost}</p>` : ''}
+                            </div>`;
+                        } else {
+                            html += `<p><strong>午餐:</strong> ${day.meals.lunch}</p>`;
+                        }
+                    }
+                    
+                    // 晚餐
+                    if (day.meals.dinner) {
+                        if (typeof day.meals.dinner === 'object') {
+                            html += `<div class="meal-item">
+                                <p><strong>晚餐:</strong> ${day.meals.dinner.restaurant_name || '待定'}</p>
+                                ${day.meals.dinner.address ? `<p class="meal-detail">📍 ${day.meals.dinner.address}</p>` : ''}
+                                ${day.meals.dinner.specialty ? `<p class="meal-detail">🍴 推荐: ${day.meals.dinner.specialty}</p>` : ''}
+                                ${day.meals.dinner.avg_cost ? `<p class="meal-detail">💰 人均: ¥${day.meals.dinner.avg_cost}</p>` : ''}
+                            </div>`;
+                        } else {
+                            html += `<p><strong>晚餐:</strong> ${day.meals.dinner}</p>`;
+                        }
+                    }
+                    
                     html += '</div>';
                 }
 
-                // 住宿建议
-                if (day.accommodation) {
-                    html += `
-                        <div class="accommodation-section">
-                            <h5>🏨 住宿</h5>
-                            <p>${day.accommodation}</p>
-                        </div>
-                    `;
+                // 住宿建议 - 离开当天不显示
+                if (day.accommodation && !isDepartureDay) {
+                    html += '<div class="accommodation-section">';
+                    html += '<h5>🏨 住宿</h5>';
+                    
+                    if (typeof day.accommodation === 'object') {
+                        html += `<div class="hotel-item">
+                            <p><strong>${day.accommodation.hotel_name || '待定'}</strong></p>
+                            ${day.accommodation.address ? `<p class="hotel-detail">📍 ${day.accommodation.address}</p>` : ''}
+                            ${day.accommodation.room_type ? `<p class="hotel-detail">🛏️ 房型: ${day.accommodation.room_type}</p>` : ''}
+                            ${day.accommodation.price_per_night ? `<p class="hotel-detail">💰 价格: ¥${day.accommodation.price_per_night}/晚</p>` : ''}
+                            ${day.accommodation.features && day.accommodation.features.length > 0 ? `<p class="hotel-detail">✨ 特色: ${day.accommodation.features.join('、')}</p>` : ''}
+                        </div>`;
+                    } else {
+                        html += `<p>${day.accommodation}</p>`;
+                    }
+                    
+                    html += '</div>';
                 }
 
                 html += '</div>';
@@ -167,7 +261,7 @@ class TravelPlanner {
         // 交通建议
         if (itinerary.transportation) {
             const trans = itinerary.transportation;
-            html += '<h4 style="margin-top: 30px; margin-bottom: 20px; color: #4CAF50; font-size: 24px;">🚗 交通建议</h4>';
+            html += '<h4 id="transportation" class="section-title" style="margin-top: 30px; margin-bottom: 20px; color: #4CAF50; font-size: 24px;">🚗 交通建议</h4>';
             html += `
                 <div class="transportation-section">
                     ${trans.to_destination ? `<p><strong>前往目的地:</strong> ${trans.to_destination}</p>` : ''}
@@ -180,20 +274,62 @@ class TravelPlanner {
         // 住宿总结
         if (itinerary.accommodation_summary) {
             const acc = itinerary.accommodation_summary;
-            html += '<h4 style="margin-top: 30px; margin-bottom: 20px; color: #4CAF50; font-size: 24px;">🏨 住宿总结</h4>';
-            html += `
-                <div class="accommodation-summary">
+            html += '<h4 id="hotels" class="section-title" style="margin-top: 30px; margin-bottom: 20px; color: #4CAF50; font-size: 24px;">🏨 推荐酒店</h4>';
+            html += '<div class="accommodation-summary">';
+            
+            // 如果有具体的酒店列表
+            if (acc.hotels && acc.hotels.length > 0) {
+                acc.hotels.forEach(hotel => {
+                    html += `
+                        <div class="hotel-card" style="background: #f9f9f9; border-left: 4px solid #4CAF50; padding: 15px; margin: 15px 0; border-radius: 8px;">
+                            <h5 style="margin-top: 0; color: #333;">${hotel.name}</h5>
+                            ${hotel.address ? `<p style="margin: 8px 0;">📍 ${hotel.address}</p>` : ''}
+                            ${hotel.price_range ? `<p style="margin: 8px 0;">💰 ${hotel.price_range}</p>` : ''}
+                            ${hotel.rating ? `<p style="margin: 8px 0;">⭐ ${hotel.rating}</p>` : ''}
+                            ${hotel.features && hotel.features.length > 0 ? `<p style="margin: 8px 0;">✨ ${hotel.features.join('、')}</p>` : ''}
+                        </div>
+                    `;
+                });
+            } else {
+                // 兼容旧格式
+                html += `
                     ${acc.type ? `<p><strong>类型:</strong> ${acc.type}</p>` : ''}
                     ${acc.suggestions ? `<p><strong>推荐:</strong> ${acc.suggestions.join('、')}</p>` : ''}
-                    ${acc.total_cost ? `<p><strong>总费用:</strong> ¥${acc.total_cost}</p>` : ''}
-                </div>
-            `;
+                `;
+            }
+            
+            if (acc.total_cost) {
+                html += `<p style="margin-top: 15px; font-size: 16px;"><strong>预计住宿总费用:</strong> <span style="color: #4CAF50; font-size: 18px;">¥${acc.total_cost}</span></p>`;
+            }
+            
+            html += '</div>';
+        }
+
+        // 餐厅推荐
+        if (itinerary.restaurant_recommendations && itinerary.restaurant_recommendations.length > 0) {
+            html += '<h4 id="restaurants" class="section-title" style="margin-top: 30px; margin-bottom: 20px; color: #4CAF50; font-size: 24px;">🍴 推荐餐厅</h4>';
+            html += '<div class="restaurant-recommendations">';
+            
+            itinerary.restaurant_recommendations.forEach(restaurant => {
+                html += `
+                    <div class="restaurant-card" style="background: #f9f9f9; border-left: 4px solid #FF9800; padding: 15px; margin: 15px 0; border-radius: 8px;">
+                        <h5 style="margin-top: 0; color: #333;">${restaurant.name}</h5>
+                        ${restaurant.cuisine_type ? `<p style="margin: 8px 0;">🍳 菜系: ${restaurant.cuisine_type}</p>` : ''}
+                        ${restaurant.address ? `<p style="margin: 8px 0;">📍 ${restaurant.address}</p>` : ''}
+                        ${restaurant.specialty ? `<p style="margin: 8px 0;">🍴 招牌菜: ${restaurant.specialty}</p>` : ''}
+                        ${restaurant.avg_cost ? `<p style="margin: 8px 0;">💰 人均消费: ¥${restaurant.avg_cost}</p>` : ''}
+                        ${restaurant.recommended_for ? `<p style="margin: 8px 0;">⏰ 推荐: ${restaurant.recommended_for}</p>` : ''}
+                    </div>
+                `;
+            });
+            
+            html += '</div>';
         }
 
         // 预算分析
         if (plan.budget_breakdown) {
             // 独立的标题行
-            html += '<h4 style="margin-top: 30px; margin-bottom: 20px; color: #4CAF50; font-size: 24px;">💰 预算分析</h4>';
+            html += '<h4 id="budget-analysis" class="section-title" style="margin-top: 30px; margin-bottom: 20px; color: #4CAF50; font-size: 24px;">💰 预算分析</h4>';
             
             // 预算详情表格
             html += '<div class="budget-breakdown">';
@@ -233,7 +369,7 @@ class TravelPlanner {
 
         // 旅行建议
         if (itinerary.tips && itinerary.tips.length > 0) {
-            html += '<h4 style="margin-top: 30px; margin-bottom: 20px; color: #4CAF50; font-size: 24px;">💡 旅行建议</h4>';
+            html += '<h4 id="tips" class="section-title" style="margin-top: 30px; margin-bottom: 20px; color: #4CAF50; font-size: 24px;">💡 旅行建议</h4>';
             html += '<div class="tips-section">';
             html += '<ul>';
             itinerary.tips.forEach(tip => {
@@ -243,8 +379,15 @@ class TravelPlanner {
             html += '</div>';
         }
 
+        // 关闭主内容区和容器
+        html += '</div>'; // 关闭 itinerary-main
+        html += '</div>'; // 关闭 itinerary-container
+
         content.innerHTML = html;
         resultSection.classList.remove('hidden');
+
+        // 添加平滑滚动到各个部分
+        this.setupSmoothNavigation();
 
         // 在地图上显示行程
         console.log('🗺️ 准备在地图上显示行程:', itinerary);
@@ -252,6 +395,138 @@ class TravelPlanner {
 
         // 滚动到结果
         resultSection.scrollIntoView({ behavior: 'smooth' });
+        
+        // 显示返回顶部按钮
+        this.showBackToTopButton();
+    }
+
+    setupSmoothNavigation() {
+        // 为侧边栏导航链接添加平滑滚动和高亮效果
+        document.querySelectorAll('.sidebar-nav-link').forEach(link => {
+            link.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                
+                const targetId = link.getAttribute('data-target');
+                const targetElement = document.getElementById(targetId);
+                
+                console.log('🔗 点击导航链接:', targetId);
+                
+                if (targetElement) {
+                    console.log('🎯 找到目标元素:', targetElement);
+                    console.log('📏 元素的offsetTop:', targetElement.offsetTop);
+                    console.log('📄 当前滚动位置:', window.pageYOffset);
+                    
+                    // 移除所有链接的active类
+                    document.querySelectorAll('.sidebar-nav-link').forEach(l => l.classList.remove('active'));
+                    // 为当前链接添加active类
+                    link.classList.add('active');
+                    
+                    // 计算目标位置 - 使用offsetTop获取元素相对于文档顶部的位置
+                    const navbarHeight = 70;
+                    const padding = 20;
+                    
+                    // 递归获取元素到文档顶部的实际距离
+                    let element = targetElement;
+                    let offsetTop = 0;
+                    while(element) {
+                        offsetTop += element.offsetTop;
+                        element = element.offsetParent;
+                    }
+                    
+                    const scrollToPosition = offsetTop - navbarHeight - padding;
+                    
+                    console.log('📍 计算出的滚动位置:', scrollToPosition);
+                    
+                    window.scrollTo({
+                        top: scrollToPosition,
+                        behavior: 'smooth'
+                    });
+                    
+                    // 延迟后验证滚动是否成功
+                    setTimeout(() => {
+                        console.log('✅ 滚动完成，当前位置:', window.pageYOffset);
+                    }, 1000);
+                } else {
+                    console.warn('⚠️ 未找到目标元素:', targetId);
+                }
+            });
+        });
+        
+        // 监听滚动，自动高亮当前部分
+        const observerOptions = {
+            root: null,
+            rootMargin: '-20% 0px -70% 0px',
+            threshold: 0
+        };
+        
+        const observerCallback = (entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    const id = entry.target.getAttribute('id');
+                    const correspondingLink = document.querySelector(`.sidebar-nav-link[data-target="${id}"]`);
+                    if (correspondingLink) {
+                        document.querySelectorAll('.sidebar-nav-link').forEach(l => l.classList.remove('active'));
+                        correspondingLink.classList.add('active');
+                    }
+                }
+            });
+        };
+        
+        const observer = new IntersectionObserver(observerCallback, observerOptions);
+        
+        // 观察所有有ID的部分
+        document.querySelectorAll('[id]').forEach(section => {
+            observer.observe(section);
+        });
+    }
+
+    showBackToTopButton() {
+        // 检查是否已经存在返回顶部按钮
+        let backToTopBtn = document.getElementById('backToTop');
+        if (!backToTopBtn) {
+            backToTopBtn = document.createElement('button');
+            backToTopBtn.id = 'backToTop';
+            backToTopBtn.innerHTML = '↑<br>目录';
+            backToTopBtn.className = 'back-to-top';
+            backToTopBtn.title = '返回导航目录';
+            document.body.appendChild(backToTopBtn);
+
+            // 点击返回导航目录
+            backToTopBtn.addEventListener('click', () => {
+                const headerElement = document.querySelector('.itinerary-header');
+                if (headerElement) {
+                    headerElement.scrollIntoView({ 
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }
+            });
+
+            // 滚动时显示/隐藏按钮
+            let scrollTimeout;
+            window.addEventListener('scroll', () => {
+                clearTimeout(scrollTimeout);
+                
+                const itineraryResult = document.getElementById('itineraryResult');
+                if (itineraryResult && !itineraryResult.classList.contains('hidden')) {
+                    const resultTop = itineraryResult.offsetTop;
+                    const scrollPosition = window.pageYOffset || document.documentElement.scrollTop;
+                    
+                    if (scrollPosition > resultTop + 300) {
+                        backToTopBtn.classList.add('visible');
+                    } else {
+                        backToTopBtn.classList.remove('visible');
+                    }
+                }
+                
+                // 滚动时淡出按钮，停止后恢复
+                backToTopBtn.style.opacity = '0.5';
+                scrollTimeout = setTimeout(() => {
+                    backToTopBtn.style.opacity = '1';
+                }, 150);
+            });
+        }
     }
 
     async loadMyPlans() {
