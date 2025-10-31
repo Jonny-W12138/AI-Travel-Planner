@@ -128,7 +128,6 @@
                                 </button>
                             </div>
                             <div id="voiceStatus" class="voice-status"></div>
-                            <div id="recognizedText" class="recognized-text"></div>
                         </div>
 
                         <div class="or-divider">
@@ -179,15 +178,20 @@
                         </div>
                     </div>
 
-                    <!-- 生成的行程展示 -->
-                    <div id="itineraryResult" class="itinerary-result hidden">
-                        <h3>📋 AI 生成的旅行计划</h3>
-                        <div id="itineraryContent"></div>
+                    <!-- 行程和地图的外层容器 -->
+                    <div id="itineraryMapWrapper" class="itinerary-map-wrapper hidden">
+                        <!-- 生成的行程展示 -->
+                        <div id="itineraryResult" class="itinerary-result">
+                            <h3>📋 AI 生成的旅行计划</h3>
+                            <div id="itineraryContent" class="content-with-map"></div>
+                        </div>
                         
-                        <!-- 地图展示 -->
-                        <div class="map-section">
-                            <h4>📍 地图导航</h4>
-                            <div id="map" class="map-container"></div>
+                        <!-- 地图显示在右侧 -->
+                        <div id="mapSidebarContainer" class="map-sidebar-container">
+                            <div class="map-sidebar-fixed">
+                                <h4>📍 地图导航</h4>
+                                <div id="map" class="map-container"></div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -196,7 +200,7 @@
             <!-- 我的行程 -->
             <section id="plans" class="section">
                 <div class="container">
-                    <h2>我的旅行计划</h2>
+                    <h2 style="color: white;">我的旅行计划</h2>
                     <div id="plansList" class="plans-list"></div>
                 </div>
             </section>
@@ -204,7 +208,7 @@
             <!-- 费用管理 -->
             <section id="expenses" class="section">
                 <div class="container">
-                    <h2>费用管理</h2>
+                    <h2 style="color: white;">费用管理</h2>
                     
                     <div class="expense-add-section">
                         <h3>记录开销</h3>

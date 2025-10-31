@@ -68,26 +68,32 @@ function initBrowserNotice() {
     if (browser === 'safari') {
         // Safari 用户始终显示提示（语音功能可能不可用）
         notice.classList.remove('hidden');
+        document.body.classList.add('browser-notice-visible');
         console.log('🌐 检测到 Safari 浏览器，显示兼容性提示');
     } else if (browser === 'chrome' || browser === 'edge') {
         // Chrome/Edge 用户只在首次访问时显示
         if (!noticeClosed) {
             notice.classList.remove('hidden');
+            document.body.classList.add('browser-notice-visible');
             console.log('🌐 检测到推荐浏览器，显示使用提示');
         } else {
             notice.classList.add('hidden');
+            document.body.classList.remove('browser-notice-visible');
         }
     } else if (browser === 'firefox') {
         // Firefox 用户显示提示（语音功能支持良好）
         if (!noticeClosed) {
             notice.classList.remove('hidden');
+            document.body.classList.add('browser-notice-visible');
             console.log('🌐 检测到 Firefox 浏览器，显示兼容性提示');
         } else {
             notice.classList.add('hidden');
+            document.body.classList.remove('browser-notice-visible');
         }
     } else {
         // 其他浏览器显示提示
         notice.classList.remove('hidden');
+        document.body.classList.add('browser-notice-visible');
         console.log('🌐 检测到未知浏览器，显示兼容性提示');
     }
     
@@ -97,6 +103,7 @@ function initBrowserNotice() {
             notice.style.animation = 'slideUp 0.3s ease-out';
             setTimeout(() => {
                 notice.classList.add('hidden');
+                document.body.classList.remove('browser-notice-visible');
                 localStorage.setItem('browserNoticeClosed', 'true');
             }, 300);
         });

@@ -31,7 +31,7 @@ class Auth {
             loginBtn.classList.add('hidden');
             logoutBtn.classList.remove('hidden');
             username.classList.remove('hidden');
-            username.textContent = `👤 ${this.currentUser.username}`;
+            username.textContent = ` ${this.currentUser.username}`;
         } else {
             loginBtn.classList.remove('hidden');
             logoutBtn.classList.add('hidden');

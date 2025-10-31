@@ -7,6 +7,7 @@ class MapManager {
         this.map = null;
         this.markers = [];
         this.polylines = []; // 存储路径线
+        this.markerMap = new Map(); // 存储 poi_name 到 marker 的映射
     }
 
     initMap(container = 'map') {
@@ -197,12 +198,47 @@ class MapManager {
             this.map.remove(marker);
         });
         this.markers = [];
+        this.markerMap.clear(); // 清除映射
         
         // 清除路径线
         this.polylines.forEach(polyline => {
             this.map.remove(polyline);
         });
         this.polylines = [];
+    }
+
+    /**
+     * 聚焦到指定的POI
+     * @param {string} poiName - POI名称
+     */
+    focusOnPOI(poiName) {
+        if (!poiName) return;
+        
+        const marker = this.markerMap.get(poiName);
+        if (marker) {
+            console.log('🎯 聚焦到:', poiName);
+            
+            // 平滑移动到标记位置
+            this.map.setCenter(marker.getPosition());
+            this.map.setZoom(16);
+            
+            // 让标记跳动一下以引起注意
+            marker.setAnimation('AMAP_ANIMATION_BOUNCE');
+            setTimeout(() => {
+                marker.setAnimation(null);
+            }, 1500);
+        } else {
+            console.warn('⚠️ 未找到标记:', poiName);
+        }
+    }
+
+    /**
+     * 重置地图视图显示所有标记
+     */
+    resetView() {
+        if (this.markers.length > 0) {
+            this.map.setFitView();
+        }
     }
 
     async showLocation(address) {
@@ -463,6 +499,15 @@ class MapManager {
 
                 this.map.add(marker);
                 this.markers.push(marker);
+                
+                // 将标记添加到映射表中，用 POI 名称作为 key
+                if (info.title) {
+                    this.markerMap.set(info.title, marker);
+                }
+                // 也用搜索关键词作为备用 key
+                if (searchKeyword && searchKeyword !== info.title) {
+                    this.markerMap.set(searchKeyword, marker);
+                }
                 
                 return [longitude, latitude];
             } else {

@@ -6,27 +6,34 @@
 }
 
 :root {
-    --primary-color: #4CAF50;
-    --secondary-color: #2196F3;
+    --primary-color: #2196F3;
+    --primary-hover: #1976D2;
+    --primary-light: #BBDEFB;
+    --secondary-color: #03A9F4;
     --danger-color: #f44336;
     --warning-color: #ff9800;
-    --success-color: #4CAF50;
+    --success-color: #2196F3;
     --text-color: #333;
     --bg-color: #f5f5f5;
     --white: #ffffff;
-    --shadow: 0 2px 10px rgba(0,0,0,0.1);
-    --shadow-lg: 0 4px 20px rgba(0,0,0,0.15);
+    --shadow: 0 2px 10px rgba(33, 150, 243, 0.15);
+    --shadow-lg: 0 4px 20px rgba(33, 150, 243, 0.25);
 }
 
 /* 浏览器兼容性提示 */
 .browser-notice {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, #2196F3 0%, #1976D2 100%);
     color: white;
     padding: 12px 0;
-    position: relative;
-    z-index: 1001;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    width: 100%;
+    z-index: 2001;
     box-shadow: 0 2px 8px rgba(0,0,0,0.1);
     animation: slideDown 0.5s ease-out;
+    transition: transform 0.3s ease, opacity 0.3s ease;
 }
 
 .browser-notice-content {
@@ -89,7 +96,9 @@
 }
 
 .browser-notice.hidden {
-    display: none;
+    transform: translateY(-100%);
+    opacity: 0;
+    pointer-events: none;
 }
 
 @keyframes slideDown {
@@ -167,22 +176,125 @@ body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
     line-height: 1.6;
     color: var(--text-color);
-    background-color: var(--bg-color);
+    background: linear-gradient(-45deg, #1976D2, #1565C0, #0D47A1, #0277BD, #01579B);
+    background-size: 300% 300%;
+    animation: gradientBG 12s ease infinite;
+    min-height: 100vh;
+    position: relative;
+    will-change: background-position;
+    background-attachment: fixed;
+    margin: 0;
+    padding: 0;
+    overflow-x: hidden;
+}
+
+/* 添加装饰性的浮动圆圈到整个页面 */
+body::before,
+body::after {
+    content: '';
+    position: fixed;
+    border-radius: 50%;
+    opacity: 0.15;
+    pointer-events: none;
+    z-index: 0;
+}
+
+body::before {
+    width: 500px;
+    height: 500px;
+    background: radial-gradient(circle, rgba(66, 165, 245, 0.25), transparent);
+    top: -250px;
+    left: -250px;
+    animation: floatCircle 20s ease-in-out infinite;
+    will-change: transform;
+}
+
+body::after {
+    width: 600px;
+    height: 600px;
+    background: radial-gradient(circle, rgba(41, 182, 246, 0.25), transparent);
+    bottom: -300px;
+    right: -300px;
+    animation: floatCircle 25s ease-in-out infinite reverse;
+    will-change: transform;
+}
+
+@keyframes floatCircle {
+    0%, 100% {
+        transform: translate(0, 0) scale(1);
+    }
+    33% {
+        transform: translate(50px, -50px) scale(1.1);
+    }
+    66% {
+        transform: translate(-30px, 30px) scale(0.9);
+    }
 }
 
 .container {
-    max-width: 1200px;
+    max-width: 1400px;
     margin: 0 auto;
     padding: 0 20px;
+    position: relative;
+    z-index: 1;
+}
+
+/* 首页section使用更大的容器 */
+#home {
+    min-height: 100vh;
+    padding: 20px 0;
+    position: relative;
+}
+
+#home .container {
+    max-width: 1600px;
+    position: relative;
+    z-index: 1;
+}
+
+@keyframes gradientBG {
+    0% {
+        background-position: 0% 50%;
+    }
+    25% {
+        background-position: 50% 100%;
+    }
+    50% {
+        background-position: 100% 50%;
+    }
+    75% {
+        background-position: 50% 0%;
+    }
+    100% {
+        background-position: 0% 50%;
+    }
 }
 
 /* 导航栏 */
 .navbar {
-    background: var(--white);
-    box-shadow: var(--shadow);
-    position: sticky;
+    background: transparent;
+    box-shadow: none;
+    position: fixed;
+    top: 48px;
+    left: 0;
+    right: 0;
+    width: 100%;
+    z-index: 2000;
+    transition: all 0.3s ease;
+    border-bottom: 1px solid transparent;
+}
+
+/* 当浏览器提示关闭后，导航栏置顶 */
+body:not(.browser-notice-visible) .navbar {
     top: 0;
-    z-index: 1000;
+}
+
+/* 滚动后的导航栏样式 */
+.navbar.scrolled {
+    background: rgba(255, 255, 255, 0.1);
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15);
+    backdrop-filter: blur(20px);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.2);
 }
 
 .navbar .container {
@@ -194,7 +306,9 @@ body {
 
 .nav-brand h1 {
     font-size: 24px;
-    color: var(--primary-color);
+    color: white;
+    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    font-weight: 600;
 }
 
 .nav-menu {
@@ -204,23 +318,33 @@ body {
 }
 
 .nav-link {
-    color: var(--text-color);
+    color: rgba(255, 255, 255, 0.95);
     text-decoration: none;
     padding: 8px 16px;
     border-radius: 5px;
     transition: all 0.3s;
+    font-weight: 500;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
 }
 
 .nav-link:hover,
 .nav-link.active {
-    background-color: var(--primary-color);
+    background-color: rgba(255, 255, 255, 0.25);
     color: var(--white);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
 }
 
 .user-menu {
     display: flex;
     align-items: center;
     gap: 10px;
+}
+
+.user-menu span {
+    color: white;
+    font-weight: 500;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
 }
 
 /* 按钮 */
@@ -230,8 +354,28 @@ body {
     border-radius: 5px;
     cursor: pointer;
     font-size: 14px;
-    transition: all 0.3s;
+    transition: all 0.3s ease;
     font-weight: 500;
+    position: relative;
+    overflow: hidden;
+}
+
+.btn::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.3);
+    transform: translate(-50%, -50%);
+    transition: width 0.6s, height 0.6s;
+}
+
+.btn:hover::before {
+    width: 300px;
+    height: 300px;
 }
 
 .btn-primary {
@@ -240,9 +384,13 @@ body {
 }
 
 .btn-primary:hover {
-    background-color: #45a049;
-    transform: translateY(-2px);
-    box-shadow: var(--shadow);
+    background-color: var(--primary-hover);
+    transform: translateY(-2px) scale(1.05);
+    box-shadow: 0 6px 20px rgba(33, 150, 243, 0.4);
+}
+
+.btn-primary:active {
+    transform: translateY(0) scale(1);
 }
 
 .btn-secondary {
@@ -257,6 +405,7 @@ body {
 .btn-large {
     padding: 15px 30px;
     font-size: 16px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
 }
 
 .btn-block {
@@ -332,6 +481,9 @@ body {
 .form-group textarea:focus {
     outline: none;
     border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(33, 150, 243, 0.1);
+    transform: scale(1.02);
+    transition: all 0.3s ease;
 }
 
 .form-row {
@@ -354,11 +506,21 @@ body {
 /* 主内容区 */
 .main-content {
     min-height: calc(100vh - 120px);
-    padding: 40px 0;
+    padding-top: 120px;
+    padding-bottom: 40px;
+    transition: padding-top 0.3s ease;
+}
+
+/* 当浏览器提示关闭后 */
+body:not(.browser-notice-visible) .main-content {
+    padding-top: 80px;
 }
 
 .section {
     display: none;
+    position: relative;
+    z-index: 1;
+    min-height: 100vh;
 }
 
 .section.active {
@@ -368,32 +530,46 @@ body {
 /* Hero 区域 */
 .hero {
     text-align: center;
-    padding: 40px 0;
+    padding: 60px 0 40px;
+    margin-bottom: 40px;
 }
 
 .hero h2 {
-    font-size: 36px;
+    font-size: 42px;
     margin-bottom: 15px;
-    color: var(--primary-color);
+    color: white;
+    font-weight: 700;
+    text-shadow: 0 3px 15px rgba(0, 0, 0, 0.3);
+    animation: fadeInDown 0.8s ease-out;
 }
 
 .hero p {
-    font-size: 18px;
-    color: #666;
+    font-size: 20px;
+    color: rgba(255, 255, 255, 0.95);
+    text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+    animation: fadeInUp 0.8s ease-out 0.2s both;
 }
 
 /* 规划区域 */
 .planning-section {
-    background: var(--white);
+    background: rgba(255, 255, 255, 0.95);
     padding: 40px;
     border-radius: 10px;
-    box-shadow: var(--shadow);
+    box-shadow: 0 4px 20px rgba(33, 150, 243, 0.2);
     margin-bottom: 30px;
+    animation: fadeInUp 0.8s ease-out 0.4s both;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.8);
 }
 
-.voice-input-section,
+.voice-input-section {
+    margin-bottom: 30px;
+    animation: slideInLeft 0.6s ease-out 0.6s both;
+}
+
 .text-input-section {
     margin-bottom: 30px;
+    animation: slideInRight 0.6s ease-out 0.8s both;
 }
 
 .voice-input-section h3,
@@ -439,6 +615,7 @@ body {
     text-align: center;
     position: relative;
     margin: 30px 0;
+    animation: scaleIn 0.6s ease-out 0.7s both;
 }
 
 .or-divider::before {
@@ -448,23 +625,50 @@ body {
     left: 0;
     right: 0;
     height: 1px;
-    background-color: #ddd;
+    background: linear-gradient(to right, transparent, #ddd, transparent);
 }
 
 .or-divider span {
-    background-color: var(--white);
+    background: rgba(255, 255, 255, 0.9);
     padding: 0 20px;
     position: relative;
-    color: #999;
+    color: #666;
+    font-weight: 600;
+    display: inline-block;
+    animation: pulse 2s ease-in-out infinite;
+    backdrop-filter: blur(10px);
+    border-radius: 20px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+@keyframes pulse {
+    0%, 100% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.1);
+    }
+}
+
+/* 行程和地图外层容器 */
+.itinerary-map-wrapper {
+    display: flex;
+    gap: 30px;
+    margin-top: 30px;
+    align-items: flex-start;
 }
 
 /* 行程结果 */
 .itinerary-result {
-    background: var(--white);
+    background: rgba(255, 255, 255, 0.95);
     padding: 40px;
     border-radius: 10px;
-    box-shadow: var(--shadow);
-    margin-top: 30px;
+    box-shadow: 0 4px 20px rgba(33, 150, 243, 0.15);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.8);
+    flex: 1;
+    max-width: calc(100% - 500px);
+    min-width: 600px;
 }
 
 .itinerary-result h3 {
@@ -490,9 +694,28 @@ body {
 .activity-item {
     padding: 15px;
     margin-bottom: 15px;
-    background-color: var(--white);
+    background: rgba(255, 255, 255, 0.85);
     border-radius: 5px;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    transition: all 0.3s;
+    cursor: pointer;
+    border-left: 3px solid transparent;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.6);
+}
+
+.activity-item:hover {
+    box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+    transform: translateY(-2px);
+    border-left-color: var(--secondary-color);
+}
+
+.activity-item.map-focused {
+    background: #e3f2fd;
+    box-shadow: 0 4px 12px rgba(33, 150, 243, 0.3);
+    border-left-color: var(--secondary-color);
+    border-left-width: 4px;
+    transform: translateY(-2px) scale(1.02);
 }
 
 .activity-time {
@@ -509,15 +732,25 @@ body {
 }
 
 .budget-item {
-    background-color: #f0f8ff;
+    background: linear-gradient(135deg, rgba(227, 242, 253, 0.85) 0%, rgba(187, 222, 251, 0.85) 100%);
     padding: 20px;
     border-radius: 8px;
     text-align: center;
+    border: 2px solid var(--primary-light);
+    transition: all 0.3s ease;
+    backdrop-filter: blur(10px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.budget-item:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 20px rgba(33, 150, 243, 0.3);
 }
 
 .budget-item h5 {
     margin-bottom: 10px;
-    color: #666;
+    color: var(--primary-hover);
+    font-weight: 600;
 }
 
 .budget-item .amount {
@@ -526,17 +759,61 @@ body {
     color: var(--primary-color);
 }
 
-/* 地图 */
+/* 地图显示在右侧 - 占位容器 */
+.map-sidebar-container {
+    width: 450px;
+    flex-shrink: 0;
+    align-self: flex-start;
+}
+
+/* 地图使用 sticky 定位 */
+.map-sidebar-fixed {
+    background: rgba(255, 255, 255, 0.9);
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+    border: 1px solid rgba(255, 255, 255, 0.6);
+    backdrop-filter: blur(10px);
+    position: -webkit-sticky;
+    position: sticky;
+    top: 140px;
+    transition: top 0.3s ease;
+    z-index: 100;
+    max-height: calc(100vh - 160px);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+/* 当浏览器提示关闭后，地图位置上移 */
+body:not(.browser-notice-visible) .map-sidebar-fixed {
+    top: 90px;
+    max-height: calc(100vh - 110px);
+}
+
+.map-sidebar-fixed h4 {
+    margin: 0 0 15px 0;
+    color: #333;
+    font-size: 18px;
+    font-weight: 600;
+    padding-bottom: 10px;
+    border-bottom: 2px solid var(--primary-color);
+    flex-shrink: 0;
+}
+
 .map-section {
     margin-top: 30px;
 }
 
 .map-container {
     width: 100%;
-    height: 500px;
+    flex: 1;
+    min-height: 500px;
+    max-height: 100%;
     border-radius: 10px;
     overflow: hidden;
-    box-shadow: var(--shadow);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    background: #f5f5f5;
 }
 
 /* 行程列表 */
@@ -576,11 +853,13 @@ body {
 .expense-add-section,
 .expense-summary,
 .expense-list {
-    background: var(--white);
+    background: rgba(255, 255, 255, 0.95);
     padding: 30px;
     border-radius: 10px;
-    box-shadow: var(--shadow);
+    box-shadow: 0 4px 20px rgba(33, 150, 243, 0.15);
     margin-bottom: 30px;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.8);
 }
 
 .voice-expense {
@@ -609,14 +888,18 @@ body {
     border-radius: 8px;
     text-align: center;
     color: var(--white);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.3);
 }
 
 .summary-card.total {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, rgba(33, 150, 243, 0.9) 0%, rgba(25, 118, 210, 0.9) 100%);
+    box-shadow: 0 4px 15px rgba(33, 150, 243, 0.4);
 }
 
 .summary-card.category {
-    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    background: linear-gradient(135deg, rgba(100, 181, 246, 0.9) 0%, rgba(66, 165, 245, 0.9) 100%);
+    box-shadow: 0 4px 15px rgba(33, 150, 243, 0.3);
 }
 
 .summary-card h4 {
@@ -633,19 +916,25 @@ body {
 .ai-analysis {
     margin-top: 25px;
     padding: 20px;
-    background-color: #f0f8ff;
+    background: rgba(240, 248, 255, 0.85);
     border-radius: 8px;
     border-left: 4px solid var(--secondary-color);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .expense-item {
     padding: 20px;
     margin-bottom: 15px;
-    background-color: #f9f9f9;
+    background: rgba(249, 249, 249, 0.85);
     border-radius: 8px;
     display: flex;
     justify-content: space-between;
     align-items: center;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 }
 
 .expense-info h5 {
@@ -722,12 +1011,102 @@ body {
     to { transform: rotate(360deg); }
 }
 
+/* 首页动画效果 */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes fadeInDown {
+    from {
+        opacity: 0;
+        transform: translateY(-30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes scaleIn {
+    from {
+        opacity: 0;
+        transform: scale(0.9);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+@keyframes slideInLeft {
+    from {
+        opacity: 0;
+        transform: translateX(-50px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+@keyframes slideInRight {
+    from {
+        opacity: 0;
+        transform: translateX(50px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+@keyframes float {
+    0%, 100% {
+        transform: translateY(0);
+    }
+    50% {
+        transform: translateY(-10px);
+    }
+}
+
+@keyframes gradientShift {
+    0% {
+        background-position: 0% 50%;
+    }
+    50% {
+        background-position: 100% 50%;
+    }
+    100% {
+        background-position: 0% 50%;
+    }
+}
+
 /* 页脚 */
 .footer {
-    background: var(--white);
+    background: rgba(255, 255, 255, 0.95);
     text-align: center;
     padding: 20px 0;
-    box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+    box-shadow: 0 -2px 10px rgba(33, 150, 243, 0.1);
+    backdrop-filter: blur(10px);
+    border-top: 1px solid rgba(33, 150, 243, 0.1);
+    position: relative;
+    z-index: 1;
 }
 
 .footer p {
@@ -735,26 +1114,29 @@ body {
     font-size: 14px;
 }
 
+/* 内容区域（包含侧边栏导航和主要内容） */
+.content-with-map {
+    width: 100%;
+}
+
 /* 行程容器布局 */
 .itinerary-container {
     display: flex;
-    gap: 20px;
+    gap: 18px;
     position: relative;
 }
 
-/* 侧边栏导航 */
+/* 侧边栏导航 - 保持原地不动 */
 .itinerary-sidebar {
-    position: sticky;
-    top: 80px;
-    width: 250px;
-    max-height: calc(100vh - 100px);
-    overflow-y: auto;
+    position: relative;
+    width: 220px;
     background: #ffffff;
-    padding: 20px;
+    padding: 18px;
     border-radius: 12px;
     box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
     border: 1px solid #e8e8e8;
     flex-shrink: 0;
+    margin-bottom: 20px;
 }
 
 /* 侧边栏滚动条样式 */
@@ -807,18 +1189,18 @@ body {
 }
 
 .sidebar-nav-link:hover {
-    background: #e8f5e9;
+    background: #E3F2FD;
     color: var(--primary-color);
     border-left-color: var(--primary-color);
     transform: translateX(3px);
 }
 
 .sidebar-nav-link.active {
-    background: linear-gradient(90deg, #e8f5e9 0%, #f1f8f4 100%);
+    background: linear-gradient(90deg, #E3F2FD 0%, #E8F4FD 100%);
     color: var(--primary-color);
     border-left-color: var(--primary-color);
     font-weight: 600;
-    box-shadow: 0 2px 4px rgba(76, 175, 80, 0.1);
+    box-shadow: 0 2px 4px rgba(33, 150, 243, 0.1);
 }
 
 /* 主内容区 */
@@ -830,6 +1212,8 @@ body {
 /* 平滑滚动 */
 html {
     scroll-behavior: smooth;
+    background: #0D47A1;
+    overflow-x: hidden;
 }
 
 /* 为锚点添加滚动偏移，避免被固定导航遮挡 */
@@ -872,9 +1256,9 @@ html {
 }
 
 .back-to-top:hover {
-    background: #45a049;
+    background: var(--primary-hover);
     transform: translateY(-5px);
-    box-shadow: 0 6px 20px rgba(76, 175, 80, 0.4);
+    box-shadow: 0 6px 20px rgba(33, 150, 243, 0.4);
 }
 
 .back-to-top:active {
@@ -883,18 +1267,28 @@ html {
 
 /* 餐厅和酒店卡片样式 */
 .meal-item {
-    background: #fff;
+    background: rgba(255, 255, 255, 0.85);
     padding: 12px;
     margin: 10px 0;
     border-radius: 8px;
     border-left: 4px solid var(--warning-color);
-    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
     transition: all 0.3s;
+    cursor: pointer;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.6);
 }
 
 .meal-item:hover {
     box-shadow: 0 4px 10px rgba(0,0,0,0.1);
     transform: translateY(-2px);
+}
+
+.meal-item.map-focused {
+    background: #fff8e1;
+    box-shadow: 0 4px 12px rgba(255, 152, 0, 0.3);
+    border-left-color: #ff9800;
+    transform: translateY(-2px) scale(1.02);
 }
 
 .meal-detail {
@@ -905,18 +1299,28 @@ html {
 }
 
 .hotel-item {
-    background: #fff;
+    background: rgba(255, 255, 255, 0.85);
     padding: 12px;
     margin: 10px 0;
     border-radius: 8px;
     border-left: 4px solid var(--primary-color);
-    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
     transition: all 0.3s;
+    cursor: pointer;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.6);
 }
 
 .hotel-item:hover {
     box-shadow: 0 4px 10px rgba(0,0,0,0.1);
     transform: translateY(-2px);
+}
+
+.hotel-item.map-focused {
+    background: #E3F2FD;
+    box-shadow: 0 4px 12px rgba(33, 150, 243, 0.3);
+    border-left-color: var(--primary-color);
+    transform: translateY(-2px) scale(1.02);
 }
 
 .hotel-detail {
@@ -927,12 +1331,14 @@ html {
 }
 
 .hotel-card, .restaurant-card {
-    background: #f9f9f9;
+    background: rgba(255, 255, 255, 0.85);
     padding: 15px;
     margin: 15px 0;
     border-radius: 8px;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.08);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
     transition: all 0.3s;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.6);
 }
 
 .hotel-card {
@@ -964,10 +1370,12 @@ html {
 
 /* 用餐建议区块 */
 .meals-section {
-    background: #fef6e9;
+    background: rgba(254, 246, 233, 0.85);
     padding: 15px;
     border-radius: 8px;
     margin: 15px 0;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.5);
 }
 
 .meals-section h5 {
@@ -978,10 +1386,12 @@ html {
 
 /* 住宿区块 */
 .accommodation-section {
-    background: #e8f5e9;
+    background: rgba(227, 242, 253, 0.85);
     padding: 15px;
     border-radius: 8px;
     margin: 15px 0;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.5);
 }
 
 .accommodation-section h5 {
@@ -992,10 +1402,13 @@ html {
 
 /* 旅行建议区块 */
 .tips-section {
-    background: #fff;
+    background: rgba(255, 255, 255, 0.85);
     padding: 20px;
     border-radius: 8px;
     margin: 0;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.6);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .tips-section ul {
@@ -1039,6 +1452,33 @@ html {
     
     .meal-item, .hotel-item {
         padding: 10px;
+    }
+    
+    /* 行程和地图在移动端改为上下排列 */
+    .itinerary-map-wrapper {
+        flex-direction: column;
+    }
+    
+    /* 行程结果在移动端全宽 */
+    .itinerary-result {
+        max-width: 100%;
+        min-width: 0;
+        padding: 25px;
+    }
+    
+    /* 地图在移动端显示在底部 */
+    .map-sidebar-container {
+        width: 100%;
+    }
+    
+    .map-sidebar-fixed {
+        position: static;
+        max-height: none;
+    }
+    
+    .map-container {
+        height: 400px;
+        flex: none;
     }
     
     /* 侧边栏在移动端改为顶部横向显示 */

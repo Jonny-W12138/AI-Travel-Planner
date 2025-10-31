@@ -42,7 +42,7 @@ class TravelPlanner {
             showMessage('error', errorMsg);
             
             // 在页面上也显示错误详情
-            const resultSection = document.getElementById('itineraryResult');
+            const wrapperSection = document.getElementById('itineraryMapWrapper');
             const content = document.getElementById('itineraryContent');
             content.innerHTML = `
                 <div style="background: #f8d7da; border: 1px solid #f5c6cb; border-radius: 8px; padding: 20px; color: #721c24;">
@@ -64,15 +64,19 @@ class TravelPlanner {
                     </ol>
                 </div>
             `;
-            resultSection.classList.remove('hidden');
+            if (wrapperSection) {
+                wrapperSection.classList.remove('hidden');
+            }
         } finally {
             hideLoading();
         }
     }
 
     displayItinerary(plan) {
+        const wrapperSection = document.getElementById('itineraryMapWrapper');
         const resultSection = document.getElementById('itineraryResult');
         const content = document.getElementById('itineraryContent');
+        const mapContainer = document.getElementById('mapSidebarContainer');
 
         // 确保 itinerary 是对象，如果是字符串则解析
         let itinerary = plan.itinerary;
@@ -126,10 +130,10 @@ class TravelPlanner {
             <div class="itinerary-container">
                 ${sidebarHtml}
                 <div class="itinerary-main">
-                    <div class="itinerary-header">
-                        <h4>${plan.title}</h4>
-                        <p class="meta">📍 ${plan.destination} | 📅 ${plan.days} 天 | 💰 预算 ¥${plan.budget}</p>
-                    </div>
+            <div class="itinerary-header">
+                <h4>${plan.title}</h4>
+                <p class="meta">📍 ${plan.destination} | 📅 ${plan.days} 天 | 💰 预算 ¥${plan.budget}</p>
+            </div>
         `;
 
         // 如果有错误信息，显示错误
@@ -166,8 +170,9 @@ class TravelPlanner {
                 // 活动安排
                 if (day.activities) {
                     day.activities.forEach(activity => {
+                        const poiName = activity.poi_name || activity.activity;
                         html += `
-                            <div class="activity-item">
+                            <div class="activity-item map-focusable" data-poi-name="${poiName}">
                                 <div class="activity-time">${activity.time || ''}</div>
                                 <div class="activity-name">${activity.activity}</div>
                                 ${activity.location ? `<div class="activity-location">📍 ${activity.location}</div>` : ''}
@@ -183,74 +188,91 @@ class TravelPlanner {
                 const isLastDay = itinerary.daily_itinerary && day.day === itinerary.daily_itinerary.length;
                 const isDepartureDay = day.title && (day.title.includes('离开') || day.title.includes('返回') || day.title.includes('回程'));
                 
-                // 用餐建议 - 离开当天不显示
+                // 用餐建议 - 离开当天不显示，且必须有实际内容才显示
                 if (day.meals && !isDepartureDay) {
+                    // 检查是否有任何有效的餐饮信息
+                    const hasBreakfast = day.meals.breakfast && (typeof day.meals.breakfast === 'string' || (typeof day.meals.breakfast === 'object' && day.meals.breakfast.restaurant_name));
+                    const hasLunch = day.meals.lunch && (typeof day.meals.lunch === 'string' || (typeof day.meals.lunch === 'object' && day.meals.lunch.restaurant_name));
+                    const hasDinner = day.meals.dinner && (typeof day.meals.dinner === 'string' || (typeof day.meals.dinner === 'object' && day.meals.dinner.restaurant_name));
+                    
+                    if (hasBreakfast || hasLunch || hasDinner) {
                     html += '<div class="meals-section">';
                     html += '<h5>🍽️ 用餐建议</h5>';
-                    
-                    // 早餐
-                    if (day.meals.breakfast) {
-                        if (typeof day.meals.breakfast === 'object') {
-                            html += `<div class="meal-item">
-                                <p><strong>早餐:</strong> ${day.meals.breakfast.restaurant_name || '待定'}</p>
-                                ${day.meals.breakfast.address ? `<p class="meal-detail">📍 ${day.meals.breakfast.address}</p>` : ''}
-                                ${day.meals.breakfast.specialty ? `<p class="meal-detail">🍴 推荐: ${day.meals.breakfast.specialty}</p>` : ''}
-                                ${day.meals.breakfast.avg_cost ? `<p class="meal-detail">💰 人均: ¥${day.meals.breakfast.avg_cost}</p>` : ''}
-                            </div>`;
-                        } else {
-                            html += `<p><strong>早餐:</strong> ${day.meals.breakfast}</p>`;
+                        
+                        // 早餐
+                        if (hasBreakfast) {
+                            if (typeof day.meals.breakfast === 'object') {
+                                const poiName = day.meals.breakfast.poi_name || day.meals.breakfast.restaurant_name;
+                                html += `<div class="meal-item map-focusable" data-poi-name="${poiName}">
+                                    <p><strong>早餐:</strong> ${day.meals.breakfast.restaurant_name}</p>
+                                    ${day.meals.breakfast.address ? `<p class="meal-detail">📍 ${day.meals.breakfast.address}</p>` : ''}
+                                    ${day.meals.breakfast.specialty ? `<p class="meal-detail">🍴 推荐: ${day.meals.breakfast.specialty}</p>` : ''}
+                                    ${day.meals.breakfast.avg_cost ? `<p class="meal-detail">💰 人均: ¥${day.meals.breakfast.avg_cost}</p>` : ''}
+                                </div>`;
+                            } else {
+                                html += `<p><strong>早餐:</strong> ${day.meals.breakfast}</p>`;
+                            }
                         }
-                    }
-                    
-                    // 午餐
-                    if (day.meals.lunch) {
-                        if (typeof day.meals.lunch === 'object') {
-                            html += `<div class="meal-item">
-                                <p><strong>午餐:</strong> ${day.meals.lunch.restaurant_name || '待定'}</p>
-                                ${day.meals.lunch.address ? `<p class="meal-detail">📍 ${day.meals.lunch.address}</p>` : ''}
-                                ${day.meals.lunch.specialty ? `<p class="meal-detail">🍴 推荐: ${day.meals.lunch.specialty}</p>` : ''}
-                                ${day.meals.lunch.avg_cost ? `<p class="meal-detail">💰 人均: ¥${day.meals.lunch.avg_cost}</p>` : ''}
-                            </div>`;
-                        } else {
-                            html += `<p><strong>午餐:</strong> ${day.meals.lunch}</p>`;
+                        
+                        // 午餐
+                        if (hasLunch) {
+                            if (typeof day.meals.lunch === 'object') {
+                                const poiName = day.meals.lunch.poi_name || day.meals.lunch.restaurant_name;
+                                html += `<div class="meal-item map-focusable" data-poi-name="${poiName}">
+                                    <p><strong>午餐:</strong> ${day.meals.lunch.restaurant_name}</p>
+                                    ${day.meals.lunch.address ? `<p class="meal-detail">📍 ${day.meals.lunch.address}</p>` : ''}
+                                    ${day.meals.lunch.specialty ? `<p class="meal-detail">🍴 推荐: ${day.meals.lunch.specialty}</p>` : ''}
+                                    ${day.meals.lunch.avg_cost ? `<p class="meal-detail">💰 人均: ¥${day.meals.lunch.avg_cost}</p>` : ''}
+                                </div>`;
+                            } else {
+                                html += `<p><strong>午餐:</strong> ${day.meals.lunch}</p>`;
+                            }
                         }
-                    }
-                    
-                    // 晚餐
-                    if (day.meals.dinner) {
-                        if (typeof day.meals.dinner === 'object') {
-                            html += `<div class="meal-item">
-                                <p><strong>晚餐:</strong> ${day.meals.dinner.restaurant_name || '待定'}</p>
-                                ${day.meals.dinner.address ? `<p class="meal-detail">📍 ${day.meals.dinner.address}</p>` : ''}
-                                ${day.meals.dinner.specialty ? `<p class="meal-detail">🍴 推荐: ${day.meals.dinner.specialty}</p>` : ''}
-                                ${day.meals.dinner.avg_cost ? `<p class="meal-detail">💰 人均: ¥${day.meals.dinner.avg_cost}</p>` : ''}
-                            </div>`;
-                        } else {
-                            html += `<p><strong>晚餐:</strong> ${day.meals.dinner}</p>`;
+                        
+                        // 晚餐
+                        if (hasDinner) {
+                            if (typeof day.meals.dinner === 'object') {
+                                const poiName = day.meals.dinner.poi_name || day.meals.dinner.restaurant_name;
+                                html += `<div class="meal-item map-focusable" data-poi-name="${poiName}">
+                                    <p><strong>晚餐:</strong> ${day.meals.dinner.restaurant_name}</p>
+                                    ${day.meals.dinner.address ? `<p class="meal-detail">📍 ${day.meals.dinner.address}</p>` : ''}
+                                    ${day.meals.dinner.specialty ? `<p class="meal-detail">🍴 推荐: ${day.meals.dinner.specialty}</p>` : ''}
+                                    ${day.meals.dinner.avg_cost ? `<p class="meal-detail">💰 人均: ¥${day.meals.dinner.avg_cost}</p>` : ''}
+                                </div>`;
+                            } else {
+                                html += `<p><strong>晚餐:</strong> ${day.meals.dinner}</p>`;
+                            }
                         }
-                    }
-                    
+                        
                     html += '</div>';
+                    }
                 }
 
-                // 住宿建议 - 离开当天不显示
+                // 住宿建议 - 离开当天不显示，且必须有实际内容才显示
                 if (day.accommodation && !isDepartureDay) {
-                    html += '<div class="accommodation-section">';
-                    html += '<h5>🏨 住宿</h5>';
+                    // 检查是否有有效的住宿信息
+                    const hasAccommodation = (typeof day.accommodation === 'string' && day.accommodation.trim() !== '' && day.accommodation !== '待定') || 
+                                            (typeof day.accommodation === 'object' && day.accommodation.hotel_name && day.accommodation.hotel_name !== '待定');
                     
-                    if (typeof day.accommodation === 'object') {
-                        html += `<div class="hotel-item">
-                            <p><strong>${day.accommodation.hotel_name || '待定'}</strong></p>
-                            ${day.accommodation.address ? `<p class="hotel-detail">📍 ${day.accommodation.address}</p>` : ''}
-                            ${day.accommodation.room_type ? `<p class="hotel-detail">🛏️ 房型: ${day.accommodation.room_type}</p>` : ''}
-                            ${day.accommodation.price_per_night ? `<p class="hotel-detail">💰 价格: ¥${day.accommodation.price_per_night}/晚</p>` : ''}
-                            ${day.accommodation.features && day.accommodation.features.length > 0 ? `<p class="hotel-detail">✨ 特色: ${day.accommodation.features.join('、')}</p>` : ''}
-                        </div>`;
-                    } else {
-                        html += `<p>${day.accommodation}</p>`;
+                    if (hasAccommodation) {
+                        html += '<div class="accommodation-section">';
+                        html += '<h5>🏨 住宿</h5>';
+                        
+                        if (typeof day.accommodation === 'object') {
+                            const poiName = day.accommodation.poi_name || day.accommodation.hotel_name;
+                            html += `<div class="hotel-item map-focusable" data-poi-name="${poiName}">
+                                <p><strong>${day.accommodation.hotel_name}</strong></p>
+                                ${day.accommodation.address ? `<p class="hotel-detail">📍 ${day.accommodation.address}</p>` : ''}
+                                ${day.accommodation.room_type ? `<p class="hotel-detail">🛏️ 房型: ${day.accommodation.room_type}</p>` : ''}
+                                ${day.accommodation.price_per_night ? `<p class="hotel-detail">💰 价格: ¥${day.accommodation.price_per_night}/晚</p>` : ''}
+                                ${day.accommodation.features && day.accommodation.features.length > 0 ? `<p class="hotel-detail">✨ 特色: ${day.accommodation.features.join('、')}</p>` : ''}
+                            </div>`;
+                        } else {
+                            html += `<p>${day.accommodation}</p>`;
+                        }
+                        
+                        html += '</div>';
                     }
-                    
-                    html += '</div>';
                 }
 
                 html += '</div>';
@@ -292,7 +314,7 @@ class TravelPlanner {
                 });
             } else {
                 // 兼容旧格式
-                html += `
+            html += `
                     ${acc.type ? `<p><strong>类型:</strong> ${acc.type}</p>` : ''}
                     ${acc.suggestions ? `<p><strong>推荐:</strong> ${acc.suggestions.join('、')}</p>` : ''}
                 `;
@@ -319,8 +341,8 @@ class TravelPlanner {
                         ${restaurant.specialty ? `<p style="margin: 8px 0;">🍴 招牌菜: ${restaurant.specialty}</p>` : ''}
                         ${restaurant.avg_cost ? `<p style="margin: 8px 0;">💰 人均消费: ¥${restaurant.avg_cost}</p>` : ''}
                         ${restaurant.recommended_for ? `<p style="margin: 8px 0;">⏰ 推荐: ${restaurant.recommended_for}</p>` : ''}
-                    </div>
-                `;
+                </div>
+            `;
             });
             
             html += '</div>';
@@ -384,7 +406,14 @@ class TravelPlanner {
         html += '</div>'; // 关闭 itinerary-container
 
         content.innerHTML = html;
-        resultSection.classList.remove('hidden');
+        
+        // 显示外层容器和地图
+        if (wrapperSection) {
+            wrapperSection.classList.remove('hidden');
+        }
+        if (mapContainer) {
+            mapContainer.classList.remove('hidden');
+        }
 
         // 添加平滑滚动到各个部分
         this.setupSmoothNavigation();
@@ -393,11 +422,44 @@ class TravelPlanner {
         console.log('🗺️ 准备在地图上显示行程:', itinerary);
         mapManager.showItineraryOnMap(itinerary, plan.destination);
 
+        // 设置地图聚焦交互
+        this.setupMapFocus();
+
         // 滚动到结果
         resultSection.scrollIntoView({ behavior: 'smooth' });
         
         // 显示返回顶部按钮
         this.showBackToTopButton();
+    }
+
+    setupMapFocus() {
+        // 为所有可聚焦的元素添加鼠标悬停事件
+        const focusableElements = document.querySelectorAll('.map-focusable');
+        
+        focusableElements.forEach(element => {
+            element.addEventListener('mouseenter', () => {
+                const poiName = element.getAttribute('data-poi-name');
+                if (poiName) {
+                    // 添加高亮效果
+                    element.classList.add('map-focused');
+                    // 在地图上聚焦
+                    mapManager.focusOnPOI(poiName);
+                }
+            });
+
+            element.addEventListener('mouseleave', () => {
+                // 移除高亮效果
+                element.classList.remove('map-focused');
+            });
+
+            // 添加点击事件也能聚焦
+            element.addEventListener('click', () => {
+                const poiName = element.getAttribute('data-poi-name');
+                if (poiName) {
+                    mapManager.focusOnPOI(poiName);
+                }
+            });
+        });
     }
 
     setupSmoothNavigation() {
@@ -487,7 +549,7 @@ class TravelPlanner {
         if (!backToTopBtn) {
             backToTopBtn = document.createElement('button');
             backToTopBtn.id = 'backToTop';
-            backToTopBtn.innerHTML = '↑<br>目录';
+            backToTopBtn.innerHTML = '↑<br>顶部';
             backToTopBtn.className = 'back-to-top';
             backToTopBtn.title = '返回导航目录';
             document.body.appendChild(backToTopBtn);
@@ -508,9 +570,9 @@ class TravelPlanner {
             window.addEventListener('scroll', () => {
                 clearTimeout(scrollTimeout);
                 
-                const itineraryResult = document.getElementById('itineraryResult');
-                if (itineraryResult && !itineraryResult.classList.contains('hidden')) {
-                    const resultTop = itineraryResult.offsetTop;
+                const itineraryWrapper = document.getElementById('itineraryMapWrapper');
+                if (itineraryWrapper && !itineraryWrapper.classList.contains('hidden')) {
+                    const resultTop = itineraryWrapper.offsetTop;
                     const scrollPosition = window.pageYOffset || document.documentElement.scrollTop;
                     
                     if (scrollPosition > resultTop + 300) {
