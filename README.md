@@ -97,7 +97,6 @@ docker pull ghcr.io/Jonny-W12138/ai-travel-planner:latest
 docker run -d \
   --name ai-travel-planner \
   -p 8000:8000 \
-  -p 3306:3306 \
   -e SECRET_KEY="your-secret-key" \
   -e ALIYUN_BAILIAN_API_KEY="your-bailian-key" \
   -e ALIYUN_ASR_APP_KEY="your-asr-key" \
