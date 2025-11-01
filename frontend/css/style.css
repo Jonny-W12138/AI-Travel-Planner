@@ -250,6 +250,7 @@ body::after {
     max-width: 1600px;
     position: relative;
     z-index: 1;
+    overflow: visible;
 }
 
 @keyframes gradientBG {
@@ -521,6 +522,7 @@ body:not(.browser-notice-visible) .main-content {
     position: relative;
     z-index: 1;
     min-height: 100vh;
+    overflow: visible;
 }
 
 .section.active {
@@ -650,12 +652,11 @@ body:not(.browser-notice-visible) .main-content {
     }
 }
 
-/* 行程和地图外层容器 */
+/* 行程容器 - 为地图提供定位上下文 */
 .itinerary-map-wrapper {
-    display: flex;
-    gap: 30px;
     margin-top: 30px;
-    align-items: flex-start;
+    position: relative;
+    min-height: 100vh;
 }
 
 /* 行程结果 */
@@ -666,9 +667,8 @@ body:not(.browser-notice-visible) .main-content {
     box-shadow: 0 4px 20px rgba(33, 150, 243, 0.15);
     backdrop-filter: blur(10px);
     border: 1px solid rgba(255, 255, 255, 0.8);
-    flex: 1;
     max-width: calc(100% - 500px);
-    min-width: 600px;
+    margin-right: auto;
 }
 
 .itinerary-result h3 {
@@ -759,14 +759,28 @@ body:not(.browser-notice-visible) .main-content {
     color: var(--primary-color);
 }
 
-/* 地图显示在右侧 - 占位容器 */
+/* 地图显示在右侧 - 初始时绝对定位，滚动后固定 */
 .map-sidebar-container {
+    position: absolute;
+    right: 24px;
+    top: 0;
     width: 450px;
-    flex-shrink: 0;
-    align-self: flex-start;
+    z-index: 100;
+    transition: top 0.3s ease, box-shadow 0.3s ease, transform 0.3s ease;
 }
 
-/* 地图使用 sticky 定位 */
+/* 滚动后固定在视口 */
+.map-sidebar-container.is-fixed {
+    position: fixed;
+    top: 140px;
+}
+
+/* 当浏览器提示关闭后，固定时的地图位置上移 */
+body:not(.browser-notice-visible) .map-sidebar-container.is-fixed {
+    top: 90px;
+}
+
+/* 地图内容卡片 */
 .map-sidebar-fixed {
     background: rgba(255, 255, 255, 0.9);
     border-radius: 12px;
@@ -774,20 +788,14 @@ body:not(.browser-notice-visible) .main-content {
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
     border: 1px solid rgba(255, 255, 255, 0.6);
     backdrop-filter: blur(10px);
-    position: -webkit-sticky;
-    position: sticky;
-    top: 140px;
-    transition: top 0.3s ease;
-    z-index: 100;
     max-height: calc(100vh - 160px);
     display: flex;
     flex-direction: column;
     overflow: hidden;
 }
 
-/* 当浏览器提示关闭后，地图位置上移 */
+/* 当浏览器提示关闭后，地图卡片高度调整 */
 body:not(.browser-notice-visible) .map-sidebar-fixed {
-    top: 90px;
     max-height: calc(100vh - 110px);
 }
 
@@ -1454,25 +1462,22 @@ html {
         padding: 10px;
     }
     
-    /* 行程和地图在移动端改为上下排列 */
-    .itinerary-map-wrapper {
-        flex-direction: column;
-    }
-    
     /* 行程结果在移动端全宽 */
     .itinerary-result {
         max-width: 100%;
-        min-width: 0;
         padding: 25px;
     }
     
-    /* 地图在移动端显示在底部 */
+    /* 地图在移动端不固定，显示在行程下方 */
     .map-sidebar-container {
+        position: static;
         width: 100%;
+        right: auto;
+        top: auto;
+        margin-top: 20px;
     }
     
     .map-sidebar-fixed {
-        position: static;
         max-height: none;
     }
     

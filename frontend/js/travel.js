@@ -430,6 +430,64 @@ class TravelPlanner {
         
         // 显示返回顶部按钮
         this.showBackToTopButton();
+        
+        // 设置地图的滚动固定效果
+        this.setupMapScrollEffect();
+    }
+    
+    setupMapScrollEffect() {
+        const mapContainer = document.getElementById('mapSidebarContainer');
+        const wrapperSection = document.getElementById('itineraryMapWrapper');
+        
+        if (!mapContainer || !wrapperSection || window.innerWidth <= 768) {
+            return;
+        }
+        
+        // 记录地图的初始右侧位置（相对于视口）
+        let initialRight = null;
+        
+        const handleScroll = () => {
+            const topOffset = document.body.classList.contains('browser-notice-visible') ? 140 : 90;
+            const wrapperRect = wrapperSection.getBoundingClientRect();
+            const wrapperTop = wrapperRect.top;
+            
+            // 当容器顶部滚动到导航栏以下时，固定地图
+            if (wrapperTop <= topOffset) {
+                // 在第一次固定前，记录地图的右侧位置
+                if (initialRight === null) {
+                    const mapRect = mapContainer.getBoundingClientRect();
+                    initialRight = window.innerWidth - mapRect.right;
+                }
+                
+                // 先设置 right 值，再添加类，避免闪烁
+                mapContainer.style.right = initialRight + 'px';
+                mapContainer.style.position = 'fixed';
+                mapContainer.style.top = topOffset + 'px';
+                mapContainer.classList.add('is-fixed');
+            } else {
+                mapContainer.classList.remove('is-fixed');
+                mapContainer.style.position = '';
+                mapContainer.style.right = '';
+                mapContainer.style.top = '';
+                // 重置记录，以便下次重新计算
+                initialRight = null;
+            }
+        };
+        
+        // 初始检查
+        handleScroll();
+        
+        // 监听滚动
+        window.addEventListener('scroll', handleScroll, { passive: true });
+        window.addEventListener('resize', () => {
+            // 窗口大小改变时重置
+            initialRight = null;
+            mapContainer.classList.remove('is-fixed');
+            mapContainer.style.position = '';
+            mapContainer.style.right = '';
+            mapContainer.style.top = '';
+            handleScroll();
+        });
     }
 
     setupMapFocus() {

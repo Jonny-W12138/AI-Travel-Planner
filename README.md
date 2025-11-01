@@ -1,7 +1,7 @@
 # AI 旅行规划师 (AI Travel Planner)
 
-[![Build and Push Docker Image](https://github.com/yourusername/AI-Travel-Planner/actions/workflows/docker-build.yml/badge.svg)](https://github.com/yourusername/AI-Travel-Planner/actions/workflows/docker-build.yml)
-[![Docker Image](https://img.shields.io/badge/docker-ghcr.io-blue)](https://github.com/yourusername/AI-Travel-Planner/pkgs/container/ai-travel-planner)
+[![Build and Push Docker Image](https://github.com/Jonny-W12138/AI-Travel-Planner/actions/workflows/docker-build.yml/badge.svg)](https://github.com/Jonny-W12138/AI-Travel-Planner/actions/workflows/docker-build.yml)
+[![Docker Image](https://img.shields.io/badge/docker-ghcr.io-blue)](https://github.com/Jonny-W12138/AI-Travel-Planner/pkgs/container/ai-travel-planner)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
 一个基于 AI 的智能旅行规划 Web 应用，帮助用户轻松规划旅行路线、管理预算和记录开销。
@@ -54,7 +54,7 @@
 
 ```bash
 # 1. 克隆项目
-git clone https://github.com/yourusername/AI-Travel-Planner.git
+git clone https://github.com/Jonny-W12138/AI-Travel-Planner.git
 cd AI-Travel-Planner
 
 # 2. 配置 API 密钥
@@ -72,7 +72,7 @@ cp env.docker .env
 
 ```bash
 # 拉取镜像
-docker pull ghcr.io/yourusername/ai-travel-planner:latest
+docker pull ghcr.io/Jonny-W12138/ai-travel-planner:latest
 
 # 运行容器（只需配置 API 密钥）
 docker run -d \
@@ -86,7 +86,7 @@ docker run -d \
   -e ALIYUN_ASR_ACCESS_KEY_SECRET="your-access-key-secret" \
   -e AMAP_API_KEY="your-amap-key" \
   -e AMAP_WEB_SERVICE_KEY="your-amap-web-key" \
-  ghcr.io/yourusername/ai-travel-planner:latest
+  ghcr.io/Jonny-W12138/ai-travel-planner:latest
 ```
 
 **详细说明**: 查看 [QUICK_START.md](QUICK_START.md) 和 [DOCKER_DEPLOY.md](DOCKER_DEPLOY.md)
@@ -107,7 +107,7 @@ docker run -d \
 #### 1. 克隆项目
 
 ```bash
-git clone https://github.com/yourusername/AI-Travel-Planner.git
+git clone https://github.com/Jonny-W12138/AI-Travel-Planner.git
 cd AI-Travel-Planner
 ```
 
