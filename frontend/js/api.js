@@ -44,7 +44,7 @@ class API {
 
             if (!response.ok) {
                 const error = await response.json().catch(() => ({}));
-                const errorMessage = error.detail || error.message || `请求失败 (${response.status})`;
+                const errorMessage = this.parseErrorMessage(error, response.status);
                 throw new Error(errorMessage);
             }
 
@@ -58,6 +58,100 @@ class API {
             console.error('API 请求错误:', error);
             throw error;
         }
+    }
+
+    // 解析错误消息
+    parseErrorMessage(error, status) {
+        // 如果 detail 是字符串，直接返回
+        if (typeof error.detail === 'string') {
+            return error.detail;
+        }
+        
+        // 如果 detail 是数组（FastAPI 验证错误）
+        if (Array.isArray(error.detail)) {
+            const messages = error.detail.map(err => {
+                // 获取字段名并转换为友好的中文名称
+                const fieldName = this.getFieldDisplayName(err.loc);
+                const message = this.getErrorMessage(err.msg, err.type);
+                return `${fieldName}${message}`;
+            });
+            return messages.join('\n');
+        }
+        
+        // 如果 detail 是对象
+        if (error.detail && typeof error.detail === 'object') {
+            return JSON.stringify(error.detail);
+        }
+        
+        // 使用 message 字段
+        if (error.message) {
+            return error.message;
+        }
+        
+        // 默认错误消息
+        return `请求失败 (${status})`;
+    }
+
+    // 获取字段的显示名称
+    getFieldDisplayName(loc) {
+        if (!loc || loc.length === 0) return '';
+        
+        const fieldMap = {
+            'username': '用户名',
+            'email': '邮箱',
+            'password': '密码',
+            'destination': '目的地',
+            'start_date': '开始日期',
+            'end_date': '结束日期',
+            'budget': '预算',
+            'travelers_count': '人数',
+            'category': '类别',
+            'amount': '金额',
+            'description': '描述'
+        };
+        
+        // 获取最后一个字段名（通常是实际的字段）
+        const field = loc[loc.length - 1];
+        return fieldMap[field] || field;
+    }
+
+    // 获取友好的错误消息
+    getErrorMessage(msg, type) {
+        // 常见的验证错误类型
+        if (type === 'string_too_short' || msg.includes('at least')) {
+            const match = msg.match(/at least (\d+)/);
+            if (match) {
+                return `长度不能少于 ${match[1]} 个字符`;
+            }
+            return '长度不足';
+        }
+        
+        if (type === 'string_too_long' || msg.includes('at most')) {
+            const match = msg.match(/at most (\d+)/);
+            if (match) {
+                return `长度不能超过 ${match[1]} 个字符`;
+            }
+            return '长度过长';
+        }
+        
+        if (type === 'value_error.email' || msg.includes('valid email')) {
+            return '格式不正确';
+        }
+        
+        if (type === 'type_error.integer' || msg.includes('integer')) {
+            return '必须是整数';
+        }
+        
+        if (type === 'type_error.float' || msg.includes('float')) {
+            return '必须是数字';
+        }
+        
+        if (msg.includes('field required') || msg.includes('missing')) {
+            return '不能为空';
+        }
+        
+        // 默认返回原始消息
+        return `: ${msg}`;
     }
 
     // GET 请求
