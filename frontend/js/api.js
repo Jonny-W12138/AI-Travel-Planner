@@ -249,6 +249,14 @@ class API {
         return this.get(`/travel/plans/${planId}`);
     }
 
+    async updateTravelPlan(planId, planData) {
+        return this.put(`/travel/plans/${planId}`, planData);
+    }
+
+    async modifyPlanWithAI(planId, feedback) {
+        return this.post(`/travel/plans/${planId}/modify-with-ai`, { feedback });
+    }
+
     async deleteTravelPlan(planId) {
         return this.delete(`/travel/plans/${planId}`);
     }

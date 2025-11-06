@@ -10,8 +10,10 @@ from ..models import User, TravelPlan
 from ..schemas import (
     TravelPlanRequest,
     TravelPlanCreate,
+    TravelPlanUpdate,
     TravelPlanResponse,
-    ItineraryResponse
+    ItineraryResponse,
+    ItineraryModificationRequest
 )
 from ..auth import get_current_user
 from ..services.ai_service import AIService
@@ -131,7 +133,7 @@ async def get_travel_plan(
 @router.put("/plans/{plan_id}", response_model=TravelPlanResponse)
 async def update_travel_plan(
     plan_id: int,
-    plan_update: TravelPlanCreate,
+    plan_update: TravelPlanUpdate,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
@@ -149,13 +151,69 @@ async def update_travel_plan(
         )
     
     # 更新字段
-    for field, value in plan_update.dict(exclude_unset=True).items():
+    update_data = plan_update.dict(exclude_unset=True)
+    for field, value in update_data.items():
         setattr(plan, field, value)
+    
+    # 如果修改了日期，重新计算天数
+    if 'start_date' in update_data or 'end_date' in update_data:
+        plan.days = (plan.end_date - plan.start_date).days + 1
     
     db.commit()
     db.refresh(plan)
     
     return plan
+
+
+@router.post("/plans/{plan_id}/modify-with-ai", response_model=TravelPlanResponse)
+async def modify_plan_with_ai(
+    plan_id: int,
+    request: ItineraryModificationRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """使用AI根据用户反馈修改旅行计划"""
+    
+    # 获取现有计划
+    plan = db.query(TravelPlan).filter(
+        TravelPlan.id == plan_id,
+        TravelPlan.user_id == current_user.id
+    ).first()
+    
+    if not plan:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="旅行计划不存在"
+        )
+    
+    # 使用 AI 根据反馈修改行程
+    try:
+        modified_itinerary = AIService.modify_itinerary_with_feedback(
+            current_itinerary=plan.itinerary,
+            destination=plan.destination,
+            days=plan.days,
+            budget=plan.budget,
+            travelers_count=plan.travelers_count,
+            user_feedback=request.feedback
+        )
+        
+        # 更新行程数据
+        plan.itinerary = modified_itinerary
+        
+        # 如果AI返回了新的预算分析，也更新它
+        if "budget_breakdown" in modified_itinerary:
+            plan.budget_breakdown = modified_itinerary.get("budget_breakdown", {})
+        
+        db.commit()
+        db.refresh(plan)
+        
+        return plan
+        
+    except Exception as ai_error:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"AI 修改行程失败: {str(ai_error)}"
+        )
 
 
 @router.delete("/plans/{plan_id}", status_code=status.HTTP_204_NO_CONTENT)

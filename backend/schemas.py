@@ -57,6 +57,20 @@ class TravelPlanCreate(BaseModel):
     budget_breakdown: Optional[Dict[str, Any]] = None
 
 
+class TravelPlanUpdate(BaseModel):
+    """更新旅行计划"""
+    title: Optional[str] = None
+    destination: Optional[str] = None
+    start_date: Optional[datetime] = None
+    end_date: Optional[datetime] = None
+    days: Optional[int] = None
+    budget: Optional[float] = None
+    travelers_count: Optional[int] = None
+    preferences: Optional[str] = None
+    itinerary: Optional[Dict[str, Any]] = None
+    budget_breakdown: Optional[Dict[str, Any]] = None
+
+
 class TravelPlanResponse(BaseModel):
     id: int
     user_id: int
@@ -115,4 +129,10 @@ class ItineraryResponse(BaseModel):
     budget: float
     itinerary: Dict[str, Any]
     budget_breakdown: Dict[str, Any]
+
+
+# AI 修改行程请求
+class ItineraryModificationRequest(BaseModel):
+    """用户对行程的修改意见"""
+    feedback: str = Field(..., description="用户的修改意见，如：我想多去几个博物馆、第二天想改成爬山等")
 

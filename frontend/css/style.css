@@ -1436,10 +1436,180 @@ html {
     color: var(--primary-color);
 }
 
+/* 编辑模式相关样式 */
+.itinerary-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 20px;
+    gap: 20px;
+}
+
+.itinerary-header-content {
+    flex: 1;
+}
+
+.itinerary-actions {
+    display: flex;
+    gap: 10px;
+    flex-shrink: 0;
+}
+
+.btn-sm {
+    padding: 8px 16px;
+    font-size: 13px;
+}
+
+/* 编辑模式输入框样式 */
+.edit-mode {
+    width: 100%;
+    padding: 8px 12px;
+    border: 2px solid var(--primary-color);
+    border-radius: 5px;
+    font-size: 14px;
+    background: #fff;
+    transition: all 0.3s ease;
+    box-sizing: border-box;
+}
+
+.edit-mode:focus {
+    outline: none;
+    border-color: var(--primary-hover);
+    box-shadow: 0 0 0 3px rgba(33, 150, 243, 0.1);
+}
+
+.activity-item .edit-mode {
+    margin-top: 5px;
+}
+
+.activity-desc .edit-mode {
+    min-height: 80px;
+    resize: vertical;
+}
+
+/* 视图模式和编辑模式切换 */
+.view-mode {
+    display: inline;
+}
+
+.view-mode.hidden {
+    display: none;
+}
+
+.edit-mode.hidden {
+    display: none;
+}
+
+/* 编辑模式下的活动项样式 */
+.activity-item:has(.edit-mode:not(.hidden)) {
+    background: #f0f8ff;
+    border-left-color: var(--primary-color);
+    border-left-width: 4px;
+}
+
+/* AI修改意见区域样式 */
+.ai-modification-section {
+    background: linear-gradient(135deg, #e3f2fd 0%, #f3e5f5 100%);
+    border-radius: 12px;
+    padding: 25px;
+    margin: 20px 0;
+    box-shadow: 0 4px 15px rgba(33, 150, 243, 0.15);
+    border: 2px solid rgba(33, 150, 243, 0.2);
+    animation: fadeIn 0.5s ease-out;
+}
+
+.ai-modification-header {
+    margin-bottom: 15px;
+}
+
+.ai-modification-header h5 {
+    color: var(--primary-color);
+    font-size: 18px;
+    margin: 0 0 8px 0;
+    font-weight: 600;
+}
+
+.ai-modification-hint {
+    color: #666;
+    font-size: 14px;
+    margin: 0;
+    line-height: 1.5;
+}
+
+.ai-modification-input-group {
+    display: flex;
+    gap: 15px;
+    align-items: flex-start;
+}
+
+.ai-feedback-textarea {
+    flex: 1;
+    padding: 15px;
+    border: 2px solid var(--primary-color);
+    border-radius: 8px;
+    font-size: 14px;
+    font-family: inherit;
+    line-height: 1.6;
+    resize: vertical;
+    min-height: 100px;
+    transition: all 0.3s ease;
+    background: white;
+}
+
+.ai-feedback-textarea:focus {
+    outline: none;
+    border-color: var(--primary-hover);
+    box-shadow: 0 0 0 4px rgba(33, 150, 243, 0.15);
+    transform: scale(1.01);
+}
+
+.ai-feedback-textarea::placeholder {
+    color: #999;
+    line-height: 1.8;
+}
+
+.ai-modification-input-group .btn {
+    padding: 12px 25px;
+    white-space: nowrap;
+    align-self: stretch;
+    min-height: 100px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 15px;
+    font-weight: 600;
+}
+
 /* 响应式设计 */
 @media (max-width: 768px) {
     .form-row {
         grid-template-columns: 1fr;
+    }
+    
+    .itinerary-header {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .itinerary-actions {
+        width: 100%;
+    }
+    
+    .itinerary-actions button {
+        flex: 1;
+    }
+    
+    .ai-modification-input-group {
+        flex-direction: column;
+    }
+    
+    .ai-modification-input-group .btn {
+        width: 100%;
+        min-height: 50px;
+    }
+    
+    .ai-modification-section {
+        padding: 20px;
     }
     
     .nav-menu {

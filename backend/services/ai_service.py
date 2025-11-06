@@ -351,6 +351,199 @@ class AIService:
             return f"预算分析失败：{str(e)}"
     
     @staticmethod
+    def modify_itinerary_with_feedback(
+        current_itinerary: Dict[str, Any],
+        destination: str,
+        days: int,
+        budget: float,
+        travelers_count: int,
+        user_feedback: str
+    ) -> Dict[str, Any]:
+        """
+        根据用户反馈修改现有行程
+        
+        Args:
+            current_itinerary: 当前的行程数据
+            destination: 目的地
+            days: 旅行天数
+            budget: 预算
+            travelers_count: 旅行人数
+            user_feedback: 用户的修改意见
+            
+        Returns:
+            修改后的行程数据
+        """
+        # 将当前行程转换为简洁的文本描述
+        current_plan_summary = json.dumps(current_itinerary, ensure_ascii=False, indent=2)
+        
+        prompt = f"""你是一个专业的旅行规划助手。用户有一个现有的旅行计划，现在需要根据他们的反馈进行调整。
+
+原始旅行计划信息：
+- 目的地：{destination}
+- 旅行天数：{days}天
+- 预算：{budget}元人民币
+- 旅行人数：{travelers_count}人
+
+当前行程内容：
+{current_plan_summary}
+
+用户的修改意见：
+{user_feedback}
+
+请根据用户的反馈，对行程进行相应的调整。要求：
+1. 保持原有行程的合理结构
+2. 只修改用户提到的部分，其他部分尽量保持不变
+3. 如果用户要求更换景点，请推荐{destination}的其他合适景点
+4. 如果用户要求调整时间，请合理安排活动顺序
+5. 如果用户要求控制预算，请调整活动选择和档次
+6. 确保修改后的行程仍然合理可行
+7. 所有费用必须使用纯数字（不要使用文字描述或数学表达式）
+8. **每个活动必须包含 "poi_name" 字段**，用于地图搜索
+9. **必须提供具体的酒店和餐厅名称**，包含完整地址
+
+请严格按照以下 JSON 格式返回修改后的完整行程（格式与原行程相同）：
+{{
+    "overview": "行程概述（根据修改更新）",
+    "daily_itinerary": [
+        {{
+            "day": 1,
+            "title": "第一天标题",
+            "activities": [
+                {{
+                    "time": "09:00",
+                    "activity": "活动名称",
+                    "location": "地点",
+                    "poi_name": "精确的景点名称用于地图搜索",
+                    "description": "详细描述",
+                    "estimated_cost": 50,
+                    "duration": "2小时"
+                }}
+            ],
+            "meals": {{
+                "breakfast": {{
+                    "restaurant_name": "具体餐厅名称",
+                    "address": "餐厅地址",
+                    "specialty": "特色菜品",
+                    "avg_cost": 30,
+                    "poi_name": "餐厅POI名称"
+                }},
+                "lunch": {{"restaurant_name": "...", "address": "...", "specialty": "...", "avg_cost": 50, "poi_name": "..."}},
+                "dinner": {{"restaurant_name": "...", "address": "...", "specialty": "...", "avg_cost": 80, "poi_name": "..."}}
+            }},
+            "accommodation": {{
+                "hotel_name": "具体酒店名称",
+                "address": "酒店地址",
+                "room_type": "房型建议",
+                "price_per_night": 300,
+                "poi_name": "酒店POI名称",
+                "features": ["酒店特色1", "酒店特色2"]
+            }}
+        }}
+    ],
+    "transportation": {{
+        "to_destination": "前往目的地的交通方式",
+        "local": "当地交通建议",
+        "estimated_cost": 500
+    }},
+    "accommodation_summary": {{
+        "type": "酒店类型",
+        "hotels": [
+            {{"name": "...", "address": "...", "price_range": "...", "rating": "...", "poi_name": "...", "features": [...]}},
+            {{"name": "...", "address": "...", "price_range": "...", "rating": "...", "poi_name": "...", "features": [...]}}
+        ],
+        "estimated_cost_per_night": 200,
+        "total_nights": 3,
+        "total_cost": 600
+    }},
+    "restaurant_recommendations": [
+        {{"name": "...", "cuisine_type": "...", "address": "...", "specialty": "...", "avg_cost": 60, "poi_name": "...", "recommended_for": "..."}}
+    ],
+    "budget_breakdown": {{
+        "transportation": 500,
+        "accommodation": 600,
+        "meals": 400,
+        "attractions": 300,
+        "shopping": 200,
+        "emergency": 100,
+        "total": 2100
+    }},
+    "tips": ["旅行建议1", "旅行建议2", "旅行建议3"]
+}}
+
+注意事项：
+1. 返回完整的行程JSON，不要省略任何部分
+2. 所有数字字段使用纯数字
+3. 确保修改后的行程符合用户的反馈要求
+4. 保持JSON格式完整有效
+5. 不要在JSON外添加任何解释文字
+
+只返回 JSON 内容，不要添加其他解释文字。
+"""
+        
+        try:
+            print(f"\n{'='*60}")
+            print(f"开始调用 AI 修改行程")
+            print(f"用户反馈: {user_feedback}")
+            print(f"{'='*60}\n")
+            
+            response = Generation.call(
+                model='qwen-max',
+                prompt=prompt,
+                result_format='message'
+            )
+            
+            print(f"\n{'='*60}")
+            print(f"AI API 响应状态码: {response.status_code}")
+            print(f"{'='*60}\n")
+            
+            if response.status_code == 200:
+                content = response.output.choices[0].message.content
+                
+                print(f"\n{'='*60}")
+                print(f"AI 返回的内容（前500字符）:")
+                print(content[:500])
+                print(f"{'='*60}\n")
+                
+                # 提取和修复 JSON
+                try:
+                    start_idx = content.find('{')
+                    end_idx = content.rfind('}')
+                    if start_idx != -1 and end_idx != -1:
+                        json_str = content[start_idx:end_idx + 1]
+                        
+                        # 清理 JSON 字符串
+                        json_str = AIService._clean_json_string(json_str)
+                        
+                        result = json.loads(json_str)
+                        print(f"✅ JSON 解析成功")
+                        return result
+                    else:
+                        error_msg = "AI 返回的内容中未找到 JSON 格式数据"
+                        print(f"❌ {error_msg}")
+                        raise Exception(error_msg)
+                        
+                except json.JSONDecodeError as json_err:
+                    error_msg = f"JSON 解析失败: {str(json_err)}"
+                    print(f"❌ {error_msg}")
+                    raise Exception(error_msg)
+            else:
+                error_msg = f"API 调用失败 - 状态码: {response.status_code}, 消息: {response.message}"
+                print(f"❌ {error_msg}")
+                raise Exception(error_msg)
+                
+        except Exception as e:
+            print(f"\n{'='*60}")
+            print(f"❌ AI 修改行程失败")
+            print(f"错误类型: {type(e).__name__}")
+            print(f"错误信息: {str(e)}")
+            print(f"{'='*60}\n")
+            
+            import traceback
+            traceback.print_exc()
+            
+            raise Exception(f"AI 行程修改失败: {str(e)}")
+    
+    @staticmethod
     def parse_voice_query(text: str) -> Dict[str, Any]:
         """
         解析语音查询，提取旅行相关信息

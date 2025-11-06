@@ -5,6 +5,8 @@
 class TravelPlanner {
     constructor() {
         this.currentPlan = null;
+        this.isEditMode = false;
+        this.originalItinerary = null;
     }
 
     async createPlan(formData) {
@@ -131,8 +133,34 @@ class TravelPlanner {
                 ${sidebarHtml}
                 <div class="itinerary-main">
             <div class="itinerary-header">
-                <h4>${plan.title}</h4>
-                <p class="meta">📍 ${plan.destination} | 📅 ${plan.days} 天 | 💰 预算 ¥${plan.budget}</p>
+                <div class="itinerary-header-content">
+                    <h4>${plan.title}</h4>
+                    <p class="meta">📍 ${plan.destination} | 📅 ${plan.days} 天 | 💰 预算 ¥${plan.budget}</p>
+                </div>
+                <div class="itinerary-actions">
+                    <button id="editItineraryBtn" class="btn btn-secondary btn-sm">✏️ 手动编辑</button>
+                    <button id="saveItineraryBtn" class="btn btn-primary btn-sm hidden">💾 保存修改</button>
+                    <button id="cancelEditBtn" class="btn btn-secondary btn-sm hidden">❌ 取消</button>
+                </div>
+            </div>
+            
+            <!-- AI修改意见区域 -->
+            <div class="ai-modification-section">
+                <div class="ai-modification-header">
+                    <h5>🤖 向AI提出修改意见</h5>
+                    <p class="ai-modification-hint">用自然语言描述您想要的修改，AI会智能调整行程</p>
+                </div>
+                <div class="ai-modification-input-group">
+                    <textarea 
+                        id="aiFeedbackInput" 
+                        class="ai-feedback-textarea" 
+                        placeholder="例如：&#10;- 我想第二天增加更多历史文化景点&#10;- 能否推荐一些当地特色美食餐厅&#10;- 希望降低住宿预算，推荐经济型酒店&#10;- 第三天想改成户外活动"
+                        rows="3"
+                    ></textarea>
+                    <button id="submitAIFeedbackBtn" class="btn btn-primary">
+                        🚀 让AI优化行程
+                    </button>
+                </div>
             </div>
         `;
 
@@ -169,16 +197,38 @@ class TravelPlanner {
 
                 // 活动安排
                 if (day.activities) {
-                    day.activities.forEach(activity => {
+                    day.activities.forEach((activity, activityIndex) => {
                         const poiName = activity.poi_name || activity.activity;
                         html += `
-                            <div class="activity-item map-focusable" data-poi-name="${poiName}">
-                                <div class="activity-time">${activity.time || ''}</div>
-                                <div class="activity-name">${activity.activity}</div>
-                                ${activity.location ? `<div class="activity-location">📍 ${activity.location}</div>` : ''}
-                                ${activity.description ? `<div class="activity-desc">${activity.description}</div>` : ''}
-                                ${activity.duration ? `<div class="activity-duration">⏱️ ${activity.duration}</div>` : ''}
-                                ${activity.estimated_cost ? `<div class="activity-cost">💰 约 ¥${activity.estimated_cost}</div>` : ''}
+                            <div class="activity-item map-focusable" data-poi-name="${poiName}" data-day="${day.day}" data-activity-index="${activityIndex}">
+                                <div class="activity-time">
+                                    <span class="view-mode">${activity.time || ''}</span>
+                                    <input type="text" class="edit-mode hidden" value="${activity.time || ''}" placeholder="时间">
+                                </div>
+                                <div class="activity-name">
+                                    <span class="view-mode">${activity.activity}</span>
+                                    <input type="text" class="edit-mode hidden" value="${activity.activity}" placeholder="活动名称">
+                                </div>
+                                ${activity.location ? `
+                                <div class="activity-location">📍 
+                                    <span class="view-mode">${activity.location}</span>
+                                    <input type="text" class="edit-mode hidden" value="${activity.location}" placeholder="地点">
+                                </div>` : ''}
+                                ${activity.description ? `
+                                <div class="activity-desc">
+                                    <span class="view-mode">${activity.description}</span>
+                                    <textarea class="edit-mode hidden" placeholder="描述">${activity.description}</textarea>
+                                </div>` : ''}
+                                ${activity.duration ? `
+                                <div class="activity-duration">⏱️ 
+                                    <span class="view-mode">${activity.duration}</span>
+                                    <input type="text" class="edit-mode hidden" value="${activity.duration}" placeholder="时长">
+                                </div>` : ''}
+                                ${activity.estimated_cost ? `
+                                <div class="activity-cost">💰 约 ¥
+                                    <span class="view-mode">${activity.estimated_cost}</span>
+                                    <input type="number" class="edit-mode hidden" value="${activity.estimated_cost}" placeholder="费用">
+                                </div>` : ''}
                             </div>
                         `;
                     });
@@ -433,6 +483,9 @@ class TravelPlanner {
         
         // 设置地图的滚动固定效果
         this.setupMapScrollEffect();
+        
+        // 设置编辑功能
+        this.setupEditMode();
     }
     
     setupMapScrollEffect() {
@@ -726,6 +779,178 @@ class TravelPlanner {
         } catch (error) {
             console.error('删除旅行计划错误:', error);
             showMessage('error', '删除失败');
+        } finally {
+            hideLoading();
+        }
+    }
+
+    setupEditMode() {
+        const editBtn = document.getElementById('editItineraryBtn');
+        const saveBtn = document.getElementById('saveItineraryBtn');
+        const cancelBtn = document.getElementById('cancelEditBtn');
+        const submitAIFeedbackBtn = document.getElementById('submitAIFeedbackBtn');
+
+        if (editBtn) {
+            editBtn.addEventListener('click', () => this.toggleEditMode(true));
+        }
+
+        if (saveBtn) {
+            saveBtn.addEventListener('click', () => this.saveItinerary());
+        }
+
+        if (cancelBtn) {
+            cancelBtn.addEventListener('click', () => this.toggleEditMode(false));
+        }
+
+        if (submitAIFeedbackBtn) {
+            submitAIFeedbackBtn.addEventListener('click', () => this.submitAIModification());
+        }
+    }
+
+    toggleEditMode(enable) {
+        this.isEditMode = enable;
+
+        const editBtn = document.getElementById('editItineraryBtn');
+        const saveBtn = document.getElementById('saveItineraryBtn');
+        const cancelBtn = document.getElementById('cancelEditBtn');
+
+        if (enable) {
+            // 保存原始数据
+            this.originalItinerary = JSON.parse(JSON.stringify(this.currentPlan.itinerary));
+
+            // 切换按钮
+            editBtn.classList.add('hidden');
+            saveBtn.classList.remove('hidden');
+            cancelBtn.classList.remove('hidden');
+
+            // 显示所有编辑输入框
+            document.querySelectorAll('.view-mode').forEach(el => el.classList.add('hidden'));
+            document.querySelectorAll('.edit-mode').forEach(el => el.classList.remove('hidden'));
+
+            showMessage('info', '编辑模式已开启，修改完成后请点击"保存修改"');
+        } else {
+            // 恢复原始数据
+            if (this.originalItinerary) {
+                this.currentPlan.itinerary = this.originalItinerary;
+                this.displayItinerary(this.currentPlan);
+            }
+
+            // 切换按钮
+            editBtn.classList.remove('hidden');
+            saveBtn.classList.add('hidden');
+            cancelBtn.classList.add('hidden');
+
+            // 隐藏所有编辑输入框
+            document.querySelectorAll('.edit-mode').forEach(el => el.classList.add('hidden'));
+            document.querySelectorAll('.view-mode').forEach(el => el.classList.remove('hidden'));
+        }
+    }
+
+    async saveItinerary() {
+        try {
+            showLoading('保存中...');
+
+            // 从DOM收集更新的数据
+            const updatedItinerary = JSON.parse(JSON.stringify(this.currentPlan.itinerary));
+
+            // 更新活动数据
+            document.querySelectorAll('.activity-item').forEach(activityEl => {
+                const day = parseInt(activityEl.dataset.day);
+                const activityIndex = parseInt(activityEl.dataset.activityIndex);
+
+                if (updatedItinerary.daily_itinerary && updatedItinerary.daily_itinerary[day - 1]) {
+                    const activity = updatedItinerary.daily_itinerary[day - 1].activities[activityIndex];
+
+                    if (activity) {
+                        // 更新活动信息
+                        const timeInput = activityEl.querySelector('.activity-time .edit-mode');
+                        const nameInput = activityEl.querySelector('.activity-name .edit-mode');
+                        const locationInput = activityEl.querySelector('.activity-location .edit-mode');
+                        const descInput = activityEl.querySelector('.activity-desc .edit-mode');
+                        const durationInput = activityEl.querySelector('.activity-duration .edit-mode');
+                        const costInput = activityEl.querySelector('.activity-cost .edit-mode');
+
+                        if (timeInput) activity.time = timeInput.value;
+                        if (nameInput) {
+                            const newActivityName = nameInput.value;
+                            // 如果活动名称改变了，更新poi_name
+                            if (newActivityName !== activity.activity) {
+                                activity.poi_name = newActivityName;
+                            }
+                            activity.activity = newActivityName;
+                        }
+                        if (locationInput) activity.location = locationInput.value;
+                        if (descInput) activity.description = descInput.value;
+                        if (durationInput) activity.duration = durationInput.value;
+                        if (costInput) activity.estimated_cost = parseFloat(costInput.value) || 0;
+                    }
+                }
+            });
+
+            // 调用API更新旅行计划
+            const result = await api.updateTravelPlan(this.currentPlan.id, {
+                itinerary: updatedItinerary
+            });
+
+            console.log('✅ 旅行计划更新成功:', result);
+
+            // 更新当前计划数据
+            this.currentPlan.itinerary = updatedItinerary;
+
+            // 退出编辑模式
+            this.isEditMode = false;
+            this.originalItinerary = null;
+
+            // 重新显示行程（包括更新地图）
+            this.displayItinerary(this.currentPlan);
+
+            showMessage('success', '行程已成功保存！');
+
+        } catch (error) {
+            console.error('❌ 保存行程错误:', error);
+            showMessage('error', '保存失败: ' + error.message);
+        } finally {
+            hideLoading();
+        }
+    }
+
+    async submitAIModification() {
+        const feedbackInput = document.getElementById('aiFeedbackInput');
+        const feedback = feedbackInput.value.trim();
+
+        if (!feedback) {
+            showMessage('warning', '请输入您的修改意见');
+            return;
+        }
+
+        if (!this.currentPlan || !this.currentPlan.id) {
+            showMessage('error', '无法找到当前旅行计划');
+            return;
+        }
+
+        try {
+            showLoading('AI 正在根据您的意见优化行程...');
+
+            console.log('📤 发送AI修改请求:', { planId: this.currentPlan.id, feedback });
+
+            const result = await api.modifyPlanWithAI(this.currentPlan.id, feedback);
+
+            console.log('📥 收到AI修改结果:', result);
+
+            // 更新当前计划数据
+            this.currentPlan = result;
+
+            // 清空输入框
+            feedbackInput.value = '';
+
+            // 重新显示行程（包括更新地图）
+            this.displayItinerary(this.currentPlan);
+
+            showMessage('success', '✨ AI已成功优化您的行程！');
+
+        } catch (error) {
+            console.error('❌ AI修改行程错误:', error);
+            showMessage('error', 'AI修改失败: ' + error.message);
         } finally {
             hideLoading();
         }
