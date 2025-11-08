@@ -91,6 +91,8 @@ cp env.docker .env
 
 **或者使用已发布的镜像：**
 
+**从 GitHub Container Registry 拉取：**
+
 ```bash
 # 拉取镜像
 docker pull ghcr.io/jonny-w12138/ai-travel-planner:latest
@@ -109,7 +111,32 @@ docker run -d \
   ghcr.io/jonny-w12138/ai-travel-planner:latest
 ```
 
+**从阿里云容器镜像服务拉取（国内用户推荐）：**
+
+```bash
+# 登录阿里云容器镜像服务（首次使用需要）
+docker login registry.cn-hangzhou.aliyuncs.com
+
+# 拉取镜像（请替换为您的命名空间）
+docker pull registry.cn-hangzhou.aliyuncs.com/<your-namespace>/ai-travel-planner:latest
+
+# 运行容器
+docker run -d \
+  --name ai-travel-planner \
+  -p 8000:8000 \
+  -e SECRET_KEY="your-secret-key" \
+  -e ALIYUN_BAILIAN_API_KEY="your-bailian-key" \
+  -e ALIYUN_ASR_APP_KEY="your-asr-key" \
+  -e ALIYUN_ASR_ACCESS_KEY_ID="your-access-key-id" \
+  -e ALIYUN_ASR_ACCESS_KEY_SECRET="your-access-key-secret" \
+  -e AMAP_API_KEY="your-amap-key" \
+  -e AMAP_WEB_SERVICE_KEY="your-amap-web-key" \
+  registry.cn-hangzhou.aliyuncs.com/<your-namespace>/ai-travel-planner:latest
+```
+
 **详细说明**: 查看 [QUICK_START.md](QUICK_START.md) 和 [DOCKER_DEPLOY.md](DOCKER_DEPLOY.md)
+
+**配置自动推送到阿里云**: 查看 [ALIYUN_DOCKER_SETUP.md](ALIYUN_DOCKER_SETUP.md)
 
 查看更多 Docker 部署选项：[DEPLOY.md](DEPLOY.md)
 
