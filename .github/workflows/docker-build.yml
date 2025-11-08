@@ -47,8 +47,17 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Check Aliyun secrets
+        id: check-aliyun
+        run: |
+          if [ "${{ github.event_name }}" != "pull_request" ] && [ -n "${{ secrets.ALIYUN_REGISTRY }}" ] && [ -n "${{ secrets.ALIYUN_NAMESPACE }}" ] && [ -n "${{ secrets.ALIYUN_USERNAME }}" ] && [ -n "${{ secrets.ALIYUN_PASSWORD }}" ]; then
+            echo "enabled=true" >> $GITHUB_OUTPUT
+          else
+            echo "enabled=false" >> $GITHUB_OUTPUT
+          fi
+
       - name: Log in to Aliyun Container Registry
-        if: github.event_name != 'pull_request' && secrets.ALIYUN_REGISTRY != ''
+        if: github.event_name != 'pull_request' && steps.check-aliyun.outputs.enabled == 'true'
         uses: docker/login-action@v3
         with:
           registry: ${{ secrets.ALIYUN_REGISTRY }}
@@ -60,13 +69,9 @@ jobs:
         run: |
           GHCR_IMAGE="${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}"
           echo "ghcr_image=$GHCR_IMAGE" >> $GITHUB_OUTPUT
-          if [ -n "${{ secrets.ALIYUN_REGISTRY }}" ] && [ -n "${{ secrets.ALIYUN_NAMESPACE }}" ]; then
+          if [ "${{ steps.check-aliyun.outputs.enabled }}" == "true" ]; then
             ALIYUN_IMAGE="${{ secrets.ALIYUN_REGISTRY }}/${{ secrets.ALIYUN_NAMESPACE }}/${{ env.IMAGE_NAME }}"
             echo "aliyun_image=$ALIYUN_IMAGE" >> $GITHUB_OUTPUT
-            {
-              echo "$GHCR_IMAGE"
-              echo "$ALIYUN_IMAGE"
-            } >> $GITHUB_OUTPUT
             echo "images<<EOF" >> $GITHUB_OUTPUT
             echo "$GHCR_IMAGE" >> $GITHUB_OUTPUT
             echo "$ALIYUN_IMAGE" >> $GITHUB_OUTPUT
