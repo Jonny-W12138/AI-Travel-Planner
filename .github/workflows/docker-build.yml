@@ -70,7 +70,13 @@ jobs:
           GHCR_IMAGE="${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}"
           echo "ghcr_image=$GHCR_IMAGE" >> $GITHUB_OUTPUT
           if [ "${{ steps.check-aliyun.outputs.enabled }}" == "true" ]; then
-            ALIYUN_IMAGE="${{ secrets.ALIYUN_REGISTRY }}/${{ secrets.ALIYUN_NAMESPACE }}/${{ env.IMAGE_NAME }}"
+            # 使用阿里云镜像名称（如果设置了 ALIYUN_IMAGE_NAME secret，否则使用默认值 ai-travel-planner）
+            if [ -n "${{ secrets.ALIYUN_IMAGE_NAME }}" ]; then
+              ALIYUN_IMG_NAME="${{ secrets.ALIYUN_IMAGE_NAME }}"
+            else
+              ALIYUN_IMG_NAME="ai-travel-planner"
+            fi
+            ALIYUN_IMAGE="${{ secrets.ALIYUN_REGISTRY }}/${{ secrets.ALIYUN_NAMESPACE }}/$ALIYUN_IMG_NAME"
             echo "aliyun_image=$ALIYUN_IMAGE" >> $GITHUB_OUTPUT
             echo "images<<EOF" >> $GITHUB_OUTPUT
             echo "$GHCR_IMAGE" >> $GITHUB_OUTPUT

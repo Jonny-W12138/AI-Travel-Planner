@@ -58,12 +58,14 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
 # 设置环境变量默认值
 ENV PYTHONUNBUFFERED=1
 ENV DATABASE_URL=mysql+pymysql://travel_user:travel_password@localhost:3306/travel_planner
+# 注意：SECRET_KEY 等敏感信息应通过运行时环境变量覆盖，不要在生产环境使用默认值
 ENV SECRET_KEY=your-secret-key-change-in-production
 ENV HOST=0.0.0.0
 ENV PORT=8000
 ENV DEBUG=False
 
 # MySQL 配置（预设账号密码）
+# 注意：这些是默认值，生产环境应通过环境变量覆盖
 ENV MYSQL_ROOT_PASSWORD=root_password
 ENV MYSQL_DATABASE=travel_planner
 ENV MYSQL_USER=travel_user
