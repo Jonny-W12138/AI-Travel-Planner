@@ -63,10 +63,18 @@ jobs:
           if [ -n "${{ secrets.ALIYUN_REGISTRY }}" ] && [ -n "${{ secrets.ALIYUN_NAMESPACE }}" ]; then
             ALIYUN_IMAGE="${{ secrets.ALIYUN_REGISTRY }}/${{ secrets.ALIYUN_NAMESPACE }}/${{ env.IMAGE_NAME }}"
             echo "aliyun_image=$ALIYUN_IMAGE" >> $GITHUB_OUTPUT
-            echo "images=$GHCR_IMAGE
-$ALIYUN_IMAGE" >> $GITHUB_OUTPUT
+            {
+              echo "$GHCR_IMAGE"
+              echo "$ALIYUN_IMAGE"
+            } >> $GITHUB_OUTPUT
+            echo "images<<EOF" >> $GITHUB_OUTPUT
+            echo "$GHCR_IMAGE" >> $GITHUB_OUTPUT
+            echo "$ALIYUN_IMAGE" >> $GITHUB_OUTPUT
+            echo "EOF" >> $GITHUB_OUTPUT
           else
-            echo "images=$GHCR_IMAGE" >> $GITHUB_OUTPUT
+            echo "images<<EOF" >> $GITHUB_OUTPUT
+            echo "$GHCR_IMAGE" >> $GITHUB_OUTPUT
+            echo "EOF" >> $GITHUB_OUTPUT
           fi
 
       - name: Extract metadata (tags, labels) for Docker
